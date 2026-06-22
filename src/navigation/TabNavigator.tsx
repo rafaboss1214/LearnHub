@@ -1,33 +1,92 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useContext, useState, useEffect } from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
-import HomeScreen from '../screens/HomeScreen';
-import AboutScreen from '../screens/AboutScreen';
-import ProjectsScreen from '../screens/ProjectsScreen';
-import ProjectDetailsScreen from '../screens/ProjectDetailsScreen';
-import DataScreen from '../screens/DataScreen';
+import HomeScreen from "../screens/HomeScreen";
+import ProjectsScreen from "../screens/ProjectsScreen";
+import DashboardScreen from "../screens/DashboardScreen";
+import { ThemeContext } from "../theme/ThemeContext";
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
+  const { colors } = useContext(ThemeContext);
+  const [userType, setUserType] = useState<string>("");
+
+  useEffect(() => {
+    async function obterUsuario() {
+      try {
+        const dados = await AsyncStorage.getItem("user");
+        if (dados) {
+          const usuario = JSON.parse(dados);
+          setUserType(usuario?.tipo ? usuario.tipo.toLowerCase().trim() : "");
+        }
+      } catch (error) {
+        console.error("Erro ao buscar tipo de usuário nas abas:", error);
+      }
+    }
+    obterUsuario();
+  }, []);
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
+          backgroundColor: colors.background,
           borderTopWidth: 0,
-          height: 65,
+          // Ajusta a altura ideal dependendo se é iOS (que tem a barra de baixo) ou Android
+          height: Platform.OS === "ios" ? 85 : 68,
+          // Controla o espaçamento interno para os ícones e textos não colarem embaixo
+          paddingTop: 10,
+          paddingBottom: Platform.OS === "ios" ? 25 : 12,
         },
-        tabBarActiveTintColor: '#38BDF8',
-        tabBarInactiveTintColor: '#CBD5E1',
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+          marginTop: 2,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text,
       }}
     >
-      <Tab.Screen name="Início" component={HomeScreen} />
-      <Tab.Screen name="Sobre" component={AboutScreen} />
-      <Tab.Screen name="Projetos" component={ProjectsScreen} />
-      <Tab.Screen name="Detalhes" component={ProjectDetailsScreen} />
-      <Tab.Screen name="Dados" component={DataScreen} />
+      <Tab.Screen
+        name="Inicio"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: "Início",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Projetos"
+        component={ProjectsScreen}
+        options={{
+          tabBarLabel: "Projetos",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="folder-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* O Dashboard só é registrado se o utilizador for 'diretor' */}
+      {userType === "diretor" && (
+        <Tab.Screen
+          name="Dashboard"
+          component={DashboardScreen}
+          options={{
+            tabBarLabel: "Dashboard",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="bar-chart-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

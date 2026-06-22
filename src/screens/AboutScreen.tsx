@@ -1,59 +1,192 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import {
+ScrollView,
+Text,
+View,
+StyleSheet
+} from "react-native";
 
-export default function AboutScreen() {
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Sobre Nós</Text>
 
-      <Text style={styles.text}>
-        O Learn Hub nasceu com o objetivo de reduzir
-        a desigualdade de recursos em projetos escolares.
-      </Text>
+import {
+useContext
+} from "react";
 
-      <Text style={styles.subtitle}>Metodologias</Text>
 
-      <Text style={styles.text}>
-        • Conexão entre comunidade e escolas{"\n"}
-        • Incentivo à participação social{"\n"}
-        • Transparência nos projetos{"\n"}
-        • Divulgação de necessidades educacionais{"\n"}
-        • Apoio empresarial e comunitário
-      </Text>
+import {
+ThemeContext
+} from "../theme/ThemeContext";
 
-      <Text style={styles.subtitle}>Conceitos</Text>
 
-      <Text style={styles.text}>
-        O projeto utiliza princípios de inovação social,
-        educação colaborativa e impacto comunitário,
-        promovendo oportunidades para estudantes
-        desenvolverem projetos com mais estrutura.
-      </Text>
-    </ScrollView>
-  );
+
+
+
+export default function AboutScreen(){
+
+
+const {
+colors
+}=useContext(ThemeContext);
+
+
+
+
+
+return(
+
+
+<ScrollView
+
+
+style={[
+
+styles.container,
+
+{
+backgroundColor:colors.background
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111827',
-    padding: 20,
-  },
-  title: {
-    color: '#38BDF8',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  subtitle: {
-    color: '#F8FAFC',
-    fontSize: 24,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  text: {
-    color: '#CBD5E1',
-    fontSize: 16,
-    lineHeight: 26,
-  },
+]}
+
+>
+
+
+
+
+<Text
+
+style={[
+styles.title,
+{
+color:colors.primary
+}
+]}
+
+>
+
+Sobre a LearnHub
+
+</Text>
+
+
+
+
+
+<Text style={[styles.text,{color:colors.text}]}>
+
+
+
+A LearnHub é uma plataforma colaborativa criada para conectar escolas,
+comunidade e parceiros.
+
+{"\n\n"}
+
+O objetivo é transformar ideias educacionais em projetos reais,
+dando visibilidade para iniciativas que muitas vezes não possuem recursos
+ou apoio suficiente.
+
+{"\n\n"}
+
+Escolas podem divulgar seus projetos, buscar colaboradores e acompanhar
+o impacto das ações.
+
+{"\n\n"}
+
+
+Missão:
+
+{"\n"}
+
+Conectar pessoas e instituições para fortalecer a educação através da colaboração.
+
+{"\n\n"}
+
+
+
+Visão:
+
+{"\n"}
+
+Ser uma ponte entre escolas e sociedade, criando oportunidades para inovação.
+
+{"\n\n"}
+
+
+
+Valores:
+
+{"\n"}
+
+• Educação acessível
+
+{"\n"}
+
+• Colaboração
+
+{"\n"}
+
+• Transparência
+
+{"\n"}
+
+• Inovação
+
+{"\n"}
+
+• Impacto social
+
+
+
+</Text>
+
+
+
+
+
+</ScrollView>
+
+
+
+)
+
+}
+
+
+
+
+
+
+
+const styles=StyleSheet.create({
+
+container:{
+
+flex:1,
+
+padding:25
+
+},
+
+
+
+title:{
+
+fontSize:35,
+
+fontWeight:"bold",
+
+marginBottom:25
+
+},
+
+
+
+text:{
+
+fontSize:17,
+
+lineHeight:26
+
+}
+
+
+
 });

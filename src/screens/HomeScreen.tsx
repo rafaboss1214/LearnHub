@@ -1,49 +1,252 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import {
+View,
+Text,
+StyleSheet,
+TouchableOpacity
+} from "react-native";
 
-export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Learn Hub</Text>
 
-      <Text style={styles.subtitle}>
-        Conectando escolas, empresas e comunidades
-        para transformar a educação.
-      </Text>
+import {
+useContext,
+useEffect,
+useState
+} from "react";
 
-      <Text style={styles.text}>
-        O Learn Hub é uma plataforma que ajuda escolas
-        a encontrarem apoio para projetos educacionais,
-        promovendo colaboração, doações e impacto social.
-      </Text>
-    </View>
-  );
+
+import AsyncStorage from
+"@react-native-async-storage/async-storage";
+
+
+import {
+ThemeContext
+}
+from "../theme/ThemeContext";
+
+
+
+
+export default function HomeScreen(
+{navigation}:any
+){
+
+
+
+const [user,setUser]=useState<any>();
+
+const [total,setTotal]=useState(0);
+
+
+
+const {
+colors
+}=useContext(ThemeContext);
+
+
+
+
+
+useEffect(()=>{
+
+
+async function load(){
+
+
+const u =
+await AsyncStorage.getItem("user");
+
+
+if(u)
+setUser(JSON.parse(u));
+
+
+
+const p =
+await AsyncStorage.getItem("projetos");
+
+
+if(p)
+setTotal(JSON.parse(p).length);
+
+
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 25,
-  },
-  title: {
-    color: '#38BDF8',
-    fontSize: 38,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  subtitle: {
-    color: '#E2E8F0',
-    fontSize: 22,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  text: {
-    color: '#CBD5E1',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 25,
-  },
+
+
+load();
+
+
+},[]);
+
+
+
+
+
+
+return(
+
+
+<View
+
+style={[
+styles.container,
+{
+backgroundColor:colors.background
+}
+]}
+
+>
+
+
+
+<Text
+
+style={[
+styles.title,
+{
+color:colors.primary
+}
+]}
+
+>
+
+Olá {user?.nome}
+
+</Text>
+
+
+
+
+
+<View
+
+style={[
+styles.card,
+{
+backgroundColor:colors.card
+}
+]}
+
+>
+
+<Text style={{
+color:colors.text,
+fontSize:20
+}}>
+
+Projetos publicados
+
+</Text>
+
+
+<Text
+
+style={{
+color:colors.yellow,
+fontSize:50
+}}
+
+>
+
+{total}
+
+</Text>
+
+
+</View>
+
+
+
+
+
+
+<TouchableOpacity
+
+style={[
+styles.button,
+{
+backgroundColor:colors.primary
+}
+]}
+
+onPress={()=>
+navigation.navigate("Projetos")
+}
+
+>
+
+
+<Text style={styles.white}>
+
+Ver projetos
+
+</Text>
+
+
+</TouchableOpacity>
+
+
+
+
+</View>
+
+
+)
+
+}
+
+
+
+
+const styles=StyleSheet.create({
+
+container:{
+
+flex:1,
+
+padding:25
+
+},
+
+
+title:{
+
+fontSize:30,
+
+fontWeight:"bold",
+
+marginBottom:30
+
+},
+
+
+card:{
+
+padding:25,
+
+borderRadius:25,
+
+marginBottom:30
+
+},
+
+
+button:{
+
+padding:18,
+
+borderRadius:18,
+
+alignItems:"center"
+
+},
+
+
+white:{
+
+color:"#fff",
+
+fontWeight:"bold"
+
+}
+
 });
