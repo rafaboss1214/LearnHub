@@ -14,6 +14,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
+import { getCurrentUser, login } from "../services/auth";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -27,29 +28,10 @@ export default function LoginScreen({ navigation }: any) {
   useEffect(() => {
     async function iniciar() {
       try {
-        // Limpa chaves antigas para garantir a carga do banco de dados inicializado
-        await AsyncStorage.removeItem("usuarios");
-        await AsyncStorage.removeItem("projetos");
-
-        // 1. Contas Padrão do Sistema
-        const usuariosPadrao = [
-          {
-            id: 1,
-            nome: "Diretor LearnHub",
-            email: "diretor@learnhub.com",
-            senha: "123456",
-            tipo: "diretor"
-          },
-          {
-            id: 2,
-            nome: "Colaborador LearnHub",
-            email: "colaborador@learnhub.com",
-            senha: "123456",
-            tipo: "colaborador"
-          }
-        ];
-
-        // 2. Lista de 10 Projetos Iniciais que já vêm embutidos no App
+        // Mantém os projetos demonstrativos já existentes sem regravar dados do usuário.
+        const projetosExistentes = await AsyncStorage.getItem("projetos");
+        if (!projetosExistentes) {
+        // Lista de 10 projetos iniciais que já vêm embutidos no app.
         const projetosIniciais = [
           {
             id: "p1",
@@ -143,10 +125,11 @@ export default function LoginScreen({ navigation }: any) {
           }
         ];
 
-        // Grava ambos os arrays no AsyncStorage do dispositivo
-        await AsyncStorage.setItem("usuarios", JSON.stringify(usuariosPadrao));
-        await AsyncStorage.setItem("projetos", JSON.stringify(projetosIniciais));
-        
+          await AsyncStorage.setItem("projetos", JSON.stringify(projetosIniciais));
+        }
+
+        const usuario = await getCurrentUser();
+        if (usuario) navigation.replace("Principal");
       } catch (error) {
         console.error("Erro ao inicializar banco de dados do app:", error);
       } finally {
@@ -154,7 +137,7 @@ export default function LoginScreen({ navigation }: any) {
       }
     }
     iniciar();
-  }, []);
+  }, [navigation]);
 
   async function entrar() {
     if (!email.trim() || !senha.trim()) {
@@ -163,21 +146,10 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     try {
-      const dados = await AsyncStorage.getItem("usuarios");
-      const usuarios = dados ? JSON.parse(dados) : [];
-
-      const usuarioEncontrado = usuarios.find(
-        (u: any) => u.email.toLowerCase() === email.toLowerCase().trim() && u.senha === senha
-      );
-
-      if (usuarioEncontrado) {
-        await AsyncStorage.setItem("user", JSON.stringify(usuarioEncontrado));
-        navigation.replace("Principal");
-      } else {
-        Alert.alert("Erro de Autenticação", "E-mail ou senha incorretos.");
-      }
+      await login(email.trim(), senha);
+      navigation.replace("Principal");
     } catch (error) {
-      Alert.alert("Erro", "Ocorreu uma falha ao tentar realizar o login.");
+      Alert.alert("Erro de Autenticação", error instanceof Error ? error.message : "Ocorreu uma falha ao tentar realizar o login.");
     }
   }
 

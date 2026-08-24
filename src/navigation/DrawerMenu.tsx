@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearSession } from "../services/auth";
 
 import TabNavigator from "./TabNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -37,7 +37,7 @@ function CustomDrawerContent(props: any) {
         onPress: async () => {
           try {
             // Limpa os dados de login salvos
-            await AsyncStorage.removeItem("user");
+            await clearSession();
             
             // Como o DrawerMenu está aninhado no Stack principal (Index), 
             // podemos resetar para a tela de Login que está no topo do Stack

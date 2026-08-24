@@ -1,4 +1,26 @@
-# Welcome to your Expo app 👋
+# LearnHub
+
+## Executar localmente
+
+1. Instale as dependências: `npm install`.
+2. Configure a API: copie `server/.env.example` para `server/.env` e use um `JWT_SECRET` único com pelo menos 32 caracteres. Um arquivo de desenvolvimento já é criado localmente e não é versionado.
+3. Inicie frontend e API juntos: `npm start`. O Expo mantém seu terminal interativo, mostra o QR Code em LAN na porta `8081` e a API usa a porta `3333`; na primeira execução, o SQLite cria `server/data/learnhub.db` a partir de `server/schema.sql`. Para executar somente a API, use `npm run server`.
+4. Em desenvolvimento no Expo Go, o app detecta automaticamente o IP da máquina pelo Metro. Para definir uma URL explicitamente, copie `.env.example` para `.env.local` e ajuste `EXPO_PUBLIC_API_URL`.
+   - Web: `http://localhost:3333`
+   - Android Emulator: `http://10.0.2.2:3333`
+   - Aparelho físico: `http://IP-DA-SUA-MAQUINA:3333`
+5. Em outro terminal, inicie o Expo com `npm start` (ou `npm run web`). Após editar `.env.local`, recarregue completamente o app.
+
+## Autenticação
+
+- `POST /cadastro` cria usuário no SQLite; o e-mail é único e a senha é derivada com `scrypt` e salt aleatório.
+- `POST /login` valida a senha e retorna um JWT de 8 horas.
+- `GET /usuario/me` exige `Authorization: Bearer <token>`.
+- No dispositivo o JWT é guardado no `expo-secure-store`; no web há fallback para AsyncStorage. Os dados do perfil continuam disponíveis para as telas existentes, sem a senha.
+
+## Testes da API
+
+Com a API em execução, rode `npm run test:auth`. O teste cobre cadastro válido, e-mail duplicado, senha incorreta, usuário inexistente, login válido e a rota protegida `/usuario/me`.
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 

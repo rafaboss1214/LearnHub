@@ -10,8 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeContext } from "../theme/ThemeContext";
+import { register } from "../services/auth";
 
 export default function RegisterScreen({ navigation }: any) {
   const [nome, setNome] = useState("");
@@ -33,36 +33,23 @@ export default function RegisterScreen({ navigation }: any) {
       return;
     }
 
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      Alert.alert("Erro", "Informe um e-mail válido.");
+      return;
+    }
+
+    if (senha.length < 8) {
+      Alert.alert("Erro", "A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
     try {
-      // Busca a lista de usuários cadastrados ou cria uma nova
-      const dadosUsuarios = await AsyncStorage.getItem("usuarios");
-      const usuarios = dadosUsuarios ? JSON.parse(dadosUsuarios) : [];
-
-      // Verifica se o e-mail já existe
-      const emailExiste = usuarios.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
-      if (emailExiste || email.toLowerCase() === "diretor@learnhub.com" || email.toLowerCase() === "colaborador@learnhub.com") {
-        Alert.alert("Erro", "Este e-mail já está cadastrado.");
-        return;
-      }
-
-      // Cria o novo objeto de usuário
-      const novoUsuario = {
-        id: Date.now(),
-        nome,
-        email: email.toLowerCase(),
-        senha,
-        tipo // Define se é 'diretor' ou 'colaborador'
-      };
-
-      usuarios.push(novoUsuario);
-      await AsyncStorage.setItem("usuarios", JSON.stringify(usuarios));
-
-      Alert.alert("Sucesso", "Conta criada com sucesso!", [
+      await register({ nome: nome.trim(), email: email.trim(), senha, tipo });
+      Alert.alert("Sucesso", "Conta criada com sucesso! Faça login para continuar.", [
         { text: "OK", onPress: () => navigation.navigate("Login") }
       ]);
     } catch (error) {
-      console.error("Erro ao salvar cadastro:", error);
-      Alert.alert("Erro", "Não foi possível realizar o cadastro no momento.");
+      Alert.alert("Erro", error instanceof Error ? error.message : "Não foi possível realizar o cadastro no momento.");
     }
   }
 
