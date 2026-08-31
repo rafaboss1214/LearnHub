@@ -88,7 +88,7 @@ export default function RegisterScreen({ navigation }: any) {
           <TextInput
             placeholder="Senha"
             placeholderTextColor="#888888"
-            secureTextEntry
+            secureTextEntry={false}
             value={senha}
             onChangeText={setSenha}
             style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
@@ -97,7 +97,7 @@ export default function RegisterScreen({ navigation }: any) {
           <TextInput
             placeholder="Confirmar Senha"
             placeholderTextColor="#888888"
-            secureTextEntry
+            secureTextEntry={false}
             value={confirmarSenha}
             onChangeText={setConfirmarSenha}
             style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}

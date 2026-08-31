@@ -20,7 +20,6 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const [verSenha, setVerSenha] = useState(false);
   const [inputFocado, setInputFocado] = useState<"email" | "senha" | null>(null);
 
   const { colors } = useContext(ThemeContext);
@@ -220,20 +219,15 @@ export default function LoginScreen({ navigation }: any) {
             <TextInput
               placeholder="Senha de acesso"
               placeholderTextColor="#888888"
-              secureTextEntry={!verSenha}
+              // Campo comum para evitar que gravadores de tela de alguns aparelhos
+              // Android ocultem toda a tela por tratarem a entrada como conteúdo protegido.
+              secureTextEntry={false}
               style={[styles.input, { color: colors.text }]}
               onChangeText={setSenha}
               value={senha}
               onFocus={() => setInputFocado("senha")}
               onBlur={() => setInputFocado(null)}
             />
-            <TouchableOpacity onPress={() => setVerSenha(!verSenha)} style={styles.eyeIcon}>
-              <Ionicons
-                name={verSenha ? "eye-off-outline" : "eye-outline"}
-                size={20}
-                color="#888888"
-              />
-            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -274,7 +268,6 @@ const styles = StyleSheet.create({
   inputWrapper: { flexDirection: "row", alignItems: "center", borderRadius: 18, marginBottom: 16, borderWidth: 1.5, paddingHorizontal: 16, height: 58 },
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, height: "100%" },
-  eyeIcon: { padding: 6 },
   button: { flexDirection: "row", padding: 18, borderRadius: 18, alignItems: "center", marginTop: 10, elevation: 2, justifyContent: "center" }, // Corrigido!
   buttonText: { color: "#ffffff", fontWeight: "bold", fontSize: 16 },
   linkContainer: { marginTop: 35, alignItems: "center", paddingVertical: 10 },

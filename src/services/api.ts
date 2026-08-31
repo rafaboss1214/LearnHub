@@ -1,0 +1,46 @@
+import { requireApiUrl } from "../config/api";
+
+const REQUEST_TIMEOUT_MS = 10000;
+export const CONNECTION_ERROR_MESSAGE =
+  "Não foi possível conectar ao servidor. Verifique se o backend está iniciado e se o celular e o computador estão na mesma rede.";
+
+export class ApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  let apiUrl: string;
+  try {
+    apiUrl = requireApiUrl();
+  } catch {
+    throw new ApiError(CONNECTION_ERROR_MESSAGE);
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${apiUrl}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", ...options.headers },
+    });
+
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new ApiError(body.message || "Não foi possível concluir a solicitação.", response.status);
+    }
+    return body as T;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(CONNECTION_ERROR_MESSAGE);
+  } finally {
+    clearTimeout(timeout);
+  }
+}

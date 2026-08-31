@@ -2,40 +2,47 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "..");
+const connectionMode = process.argv.includes("--tunnel") ? "--tunnel" : "--lan";
 
-const api = spawn(process.execPath, ["server/index.js"], {
-  cwd: projectRoot,
-  stdio: ["inherit", "pipe", "pipe"],
-});
-
-function writeApiOutput(chunk, stream) {
-  const output = chunk.toString().replace(/^/gm, "[API] ");
-  stream.write(output);
-}
-
-api.stdout.on("data", (chunk) => writeApiOutput(chunk, process.stdout));
-api.stderr.on("data", (chunk) => writeApiOutput(chunk, process.stderr));
-api.on("error", (error) => console.error("[API] Não foi possível iniciar:", error.message));
-
-// O Expo recebe diretamente o TTY do terminal: sua interface interativa e o QR Code são preservados.
-// O host padrão do Expo é LAN; --offline evita que uma indisponibilidade externa impeça o QR local.
-const expo = spawn(process.execPath, [path.join("node_modules", "expo", "bin", "cli"), "start", "--offline"], {
+const api = spawn(process.execPath, ["backend/src/server.js"], {
   cwd: projectRoot,
   stdio: "inherit",
 });
 
-function stopApi() {
+api.on("error", (error) => console.error("[API] Não foi possível iniciar:", error.message));
+
+// O Expo recebe o TTY diretamente para preservar a interface interativa e o QR Code.
+const expoCli = path.join(projectRoot, "node_modules", "expo", "bin", "cli");
+const expoArguments = [expoCli, "start", connectionMode === "--lan" ? "--offline" : "--tunnel"];
+const expo = spawn(process.execPath, expoArguments, {
+  cwd: projectRoot,
+  stdio: "inherit",
+});
+
+let stopping = false;
+
+function stopChildren() {
+  if (stopping) return;
+  stopping = true;
   if (!api.killed) api.kill();
+  if (!expo.killed) expo.kill();
 }
 
 expo.on("exit", (code) => {
-  stopApi();
-  process.exit(code ?? 0);
+  stopChildren();
+  process.exitCode = code ?? 0;
+});
+
+api.on("exit", (code) => {
+  if (!stopping && code !== 0) {
+    console.error("[API] O backend foi encerrado. Corrija a mensagem acima e execute npm run dev novamente.");
+    stopChildren();
+    process.exitCode = code ?? 1;
+  }
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
-    stopApi();
-    expo.kill(signal);
+    stopChildren();
   });
 }
