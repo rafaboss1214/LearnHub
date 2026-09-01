@@ -1,9 +1,11 @@
 const { spawn } = require("node:child_process");
 const net = require("node:net");
 const path = require("node:path");
+const dotenv = require("dotenv");
 const { getPreferredLocalIPv4 } = require("../backend/src/utils/network");
 
 const projectRoot = path.resolve(__dirname, "..");
+dotenv.config({ path: path.join(projectRoot, ".env"), quiet: true });
 const connectionMode = process.argv.includes("--tunnel") ? "--tunnel" : "--lan";
 
 async function learnHubApiIsRunning() {
@@ -79,12 +81,14 @@ async function main() {
   }
 
   let apiTunnel = null;
-  let publicApiUrl = null;
-  if (connectionMode === "--tunnel") {
+  let publicApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim() || null;
+  if (connectionMode === "--tunnel" && !publicApiUrl) {
     const tunnel = startApiTunnel();
     apiTunnel = tunnel.child;
     publicApiUrl = await tunnel.ready;
     console.log(`[API] Túnel público conectado: ${publicApiUrl}`);
+  } else if (connectionMode === "--tunnel" && publicApiUrl) {
+    console.log(`[API] Usando API hospedada: ${publicApiUrl}`);
   }
 
   // O Expo recebe o TTY diretamente para preservar a interface interativa e o QR Code.
