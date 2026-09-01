@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
 import { getCurrentUser, login } from "../services/auth";
+import { warmUpApi } from "../services/api";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -25,6 +26,8 @@ export default function LoginScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
 
   useEffect(() => {
+    // Abre a conexão do túnel antes de o usuário tocar em Entrar.
+    void warmUpApi();
     async function iniciar() {
       try {
         // Mantém os projetos demonstrativos já existentes sem regravar dados do usuário.

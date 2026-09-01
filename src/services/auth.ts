@@ -41,8 +41,7 @@ export async function login(email: string, senha: string) {
   return result.user;
 }
 
-export async function getCurrentUser() {
-  const token = await getToken();
+async function fetchCurrentUser(token: string) {
   if (!token) return null;
   try {
     const result = await apiRequest<{ user: AuthUser }>("/api/auth/me", {
@@ -54,4 +53,25 @@ export async function getCurrentUser() {
     if (error instanceof ApiError && error.status === 401) await clearSession();
     return null;
   }
+}
+
+export async function getCurrentUser() {
+  const [token, cachedUser] = await Promise.all([
+    getToken(),
+    AsyncStorage.getItem("user"),
+  ]);
+  if (!token) return null;
+
+  if (cachedUser) {
+    try {
+      const user = JSON.parse(cachedUser) as AuthUser;
+      // Abre o app imediatamente; o servidor confirma a sessão sem bloquear a interface.
+      void fetchCurrentUser(token);
+      return user;
+    } catch {
+      await AsyncStorage.removeItem("user");
+    }
+  }
+
+  return fetchCurrentUser(token);
 }

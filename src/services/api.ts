@@ -44,3 +44,11 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     clearTimeout(timeout);
   }
 }
+
+export async function warmUpApi() {
+  try {
+    await apiRequest("/api/health");
+  } catch {
+    // Aquecimento é oportunista; erros reais continuam sendo exibidos nas ações do usuário.
+  }
+}

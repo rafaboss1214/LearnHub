@@ -9,6 +9,11 @@ function positiveInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function boolean(value, fallback = false) {
+  if (value == null || value === "") return fallback;
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
+}
+
 module.exports = Object.freeze({
   envPath,
   PORT: positiveInteger(process.env.PORT, 3000),
@@ -18,6 +23,8 @@ module.exports = Object.freeze({
   DB_PASSWORD: process.env.DB_PASSWORD || "",
   DB_NAME: process.env.DB_NAME || "learnhub",
   DB_CONNECT_TIMEOUT: positiveInteger(process.env.DB_CONNECT_TIMEOUT, 5000),
+  DB_SSL: boolean(process.env.DB_SSL),
+  DB_SSL_CA_BASE64: process.env.DB_SSL_CA_BASE64 || "",
   JWT_SECRET: process.env.JWT_SECRET || "",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
 });
