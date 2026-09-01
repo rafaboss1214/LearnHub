@@ -63,6 +63,7 @@ function startApiTunnel() {
 
 async function main() {
   const apiAlreadyRunning = await learnHubApiIsRunning();
+  const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim() || null;
   if (connectionMode === "--lan" && apiAlreadyRunning && (await portIsOpen(8081))) {
     console.log("LearnHub já está em execução (API na porta 3000 e Expo na porta 8081).");
     console.log("Use o terminal que já está aberto ou pressione R no Expo Go para recarregar.");
@@ -70,7 +71,9 @@ async function main() {
   }
 
   let api = null;
-  if (apiAlreadyRunning) {
+  if (connectionMode === "--tunnel" && configuredApiUrl) {
+    console.log(`[API] Backend hospedado configurado: ${configuredApiUrl}`);
+  } else if (apiAlreadyRunning) {
     console.log("[API] LearnHub já está ativa na porta 3000; reutilizando o processo existente.");
   } else {
     api = spawn(process.execPath, ["backend/src/server.js"], {
@@ -81,7 +84,7 @@ async function main() {
   }
 
   let apiTunnel = null;
-  let publicApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim() || null;
+  let publicApiUrl = configuredApiUrl;
   if (connectionMode === "--tunnel" && !publicApiUrl) {
     const tunnel = startApiTunnel();
     apiTunnel = tunnel.child;
