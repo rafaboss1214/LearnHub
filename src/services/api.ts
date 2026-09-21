@@ -2,7 +2,7 @@ import { requireApiUrl } from "../config/api";
 
 const REQUEST_TIMEOUT_MS = 10000;
 export const CONNECTION_ERROR_MESSAGE =
-  "Não foi possível conectar ao servidor. Verifique se o backend está iniciado e se o celular e o computador estão na mesma rede.";
+  "Não foi possível conectar ao LearnHub agora. Verifique sua internet e tente novamente.";
 
 export class ApiError extends Error {
   status?: number;
@@ -31,6 +31,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
       signal: controller.signal,
       headers: { "Content-Type": "application/json", ...options.headers },
     });
+
+    if (response.status === 204) return undefined as T;
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {

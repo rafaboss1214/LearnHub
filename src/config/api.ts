@@ -35,15 +35,17 @@ function withoutTrailingSlash(url: string) {
 }
 
 function resolveApiUrl() {
+  // Uma URL explícita deve vencer a descoberta LAN. Assim, o mesmo app usa a
+  // API hospedada tanto no túnel quanto quando o Metro está aberto em LAN.
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (configuredUrl?.trim()) {
+    return { url: withoutTrailingSlash(configuredUrl), source: "environment" as const };
+  }
+
   // SDK 54: hostUri contém o host usado pelo Metro no Expo Go em modo LAN.
   const metroHost = extractHost(Constants.expoConfig?.hostUri);
   if (isUsableMetroHost(metroHost)) {
     return { url: `http://${metroHost}:${API_PORT}`, source: "expo-host" as const };
-  }
-
-  const configuredUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (configuredUrl?.trim()) {
-    return { url: withoutTrailingSlash(configuredUrl), source: "environment" as const };
   }
 
   if (Platform.OS === "web") {

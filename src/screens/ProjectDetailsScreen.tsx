@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useEffect,
   useState,
   useContext
@@ -30,7 +31,7 @@ export default function ProjectDetailsScreen({ route, navigation }: any) {
 
   const { colors } = useContext(ThemeContext);
 
-  async function carregar() {
+  const carregar = useCallback(async () => {
     try {
       const dados = await AsyncStorage.getItem("projetos");
       const lista = JSON.parse(dados || "[]");
@@ -44,11 +45,11 @@ export default function ProjectDetailsScreen({ route, navigation }: any) {
     } catch (error) {
       console.error("Erro ao carregar os detalhes do projeto:", error);
     }
-  }
+  }, [idFinal]);
 
   useEffect(() => {
-    carregar();
-  }, [idFinal]);
+    void carregar();
+  }, [carregar]);
 
   async function comentar() {
     if (!comentario.trim() || !idFinal) return;
@@ -72,7 +73,7 @@ export default function ProjectDetailsScreen({ route, navigation }: any) {
 
       await AsyncStorage.setItem("projetos", JSON.stringify(lista));
       setComentario("");
-      carregar();
+      await carregar();
     } catch (error) {
       console.error("Erro ao comentar:", error);
     }

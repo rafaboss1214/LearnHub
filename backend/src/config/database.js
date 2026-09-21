@@ -29,6 +29,14 @@ async function testDatabaseConnection() {
   const connection = await pool.getConnection();
   try {
     await connection.query("SELECT 1 AS connection_test");
+    await connection.query(
+      `SELECT id, nome, email, tipo_usuario FROM usuarios LIMIT 0`,
+    );
+    await connection.query(
+      `SELECT id, titulo, descricao, categoria, imagem_url, status, criador_id,
+              created_at, updated_at
+       FROM projetos LIMIT 0`,
+    );
     return true;
   } finally {
     connection.release();

@@ -12,7 +12,7 @@ async function saveToken(token: string) {
   return SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
-async function getToken() {
+export async function getAuthToken() {
   if (Platform.OS === "web") return AsyncStorage.getItem(TOKEN_KEY);
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
@@ -57,7 +57,7 @@ async function fetchCurrentUser(token: string) {
 
 export async function getCurrentUser() {
   const [token, cachedUser] = await Promise.all([
-    getToken(),
+    getAuthToken(),
     AsyncStorage.getItem("user"),
   ]);
   if (!token) return null;
@@ -74,4 +74,27 @@ export async function getCurrentUser() {
   }
 
   return fetchCurrentUser(token);
+}
+
+async function authorizedAuthRequest<T>(options: RequestInit) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
+  return apiRequest<T>("/api/auth/me", {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function updateProfile(payload: { nome?: string; email?: string; senha?: string }) {
+  const result = await authorizedAuthRequest<{ user: AuthUser }>({
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  await AsyncStorage.setItem("user", JSON.stringify(result.user));
+  return result.user;
+}
+
+export async function deleteAccount() {
+  await authorizedAuthRequest<void>({ method: "DELETE" });
+  await clearSession();
 }

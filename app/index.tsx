@@ -3,14 +3,10 @@ createNativeStackNavigator
 } from "@react-navigation/native-stack";
 
 
-import LoginScreen from "../src/screens/LoginScreen";
-import RegisterScreen from "../src/screens/RegisterScreen";
+import LoginScreen from "../src/screens/LoginModernScreen";
+import RegisterScreen from "../src/screens/RegisterModernScreen";
 
 import DrawerMenu from "../src/navigation/DrawerMenu";
-
-
-import ProjectDetailsScreen
-from "../src/screens/ProjectDetailsScreen";
 
 
 import {
@@ -72,20 +68,6 @@ name="Principal"
 component={DrawerMenu}
 
 />
-
-
-
-
-
-<Stack.Screen
-
-name="Detalhes"
-
-component={ProjectDetailsScreen}
-
-/>
-
-
 
 
 </Stack.Navigator>

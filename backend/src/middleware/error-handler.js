@@ -9,6 +9,9 @@ const DATABASE_ERROR_CODES = new Set([
   "ER_ACCESS_DENIED_ERROR",
   "ER_BAD_DB_ERROR",
   "ER_NO_SUCH_TABLE",
+  "ER_BAD_FIELD_ERROR",
+  "ER_NO_REFERENCED_ROW_2",
+  "ER_ROW_IS_REFERENCED_2",
 ]);
 
 function isDatabaseError(error) {
@@ -25,7 +28,7 @@ function errorHandler(error, _request, response, _next) {
   }
 
   if (error?.code === "ER_DUP_ENTRY") {
-    return response.status(409).json({ success: false, message: "Este e-mail já está cadastrado." });
+    return response.status(409).json({ success: false, message: "Este registro já existe." });
   }
 
   if (isDatabaseError(error)) {

@@ -1,4 +1,5 @@
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
 const net = require("node:net");
 const path = require("node:path");
 const dotenv = require("dotenv");
@@ -34,15 +35,29 @@ function portIsOpen(port) {
   });
 }
 
-function startApiTunnel() {
-  const executable = path.join(projectRoot, "tools", "cloudflared.exe");
-  const child = spawn(executable, ["tunnel", "--url", "http://127.0.0.1:3000", "--no-autoupdate"], {
-    cwd: projectRoot,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+function startCloudflareTunnel(targetUrl, label) {
+  const bundledExecutable = path.join(
+    projectRoot,
+    "tools",
+    process.platform === "win32" ? "cloudflared.exe" : "cloudflared",
+  );
+  const configuredExecutable = process.env.CLOUDFLARED_PATH?.trim();
+  const executable =
+    configuredExecutable || (fs.existsSync(bundledExecutable) ? bundledExecutable : "cloudflared");
+  const child = spawn(
+    executable,
+    ["tunnel", "--url", targetUrl, "--protocol", "http2", "--no-autoupdate"],
+    {
+      cwd: projectRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
 
   const ready = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("O túnel da API não respondeu a tempo.")), 30000);
+    const timeout = setTimeout(
+      () => reject(new Error(`O túnel ${label} não respondeu a tempo.`)),
+      45000,
+    );
     const inspect = (chunk) => {
       const match = chunk.toString().match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/i);
       if (match) {
@@ -52,9 +67,19 @@ function startApiTunnel() {
     };
     child.stdout.on("data", inspect);
     child.stderr.on("data", inspect);
-    child.once("error", reject);
+    child.once("error", (error) => {
+      if (error.code === "ENOENT") {
+        reject(
+          new Error(
+            "cloudflared não foi encontrado. Execute a configuração do túnel ou instale o cloudflared e defina CLOUDFLARED_PATH.",
+          ),
+        );
+        return;
+      }
+      reject(error);
+    });
     child.once("exit", (code) => {
-      if (code && code !== 0) reject(new Error(`O túnel da API encerrou com código ${code}.`));
+      if (code && code !== 0) reject(new Error(`O túnel ${label} encerrou com código ${code}.`));
     });
   });
 
@@ -62,16 +87,16 @@ function startApiTunnel() {
 }
 
 async function main() {
-  const apiAlreadyRunning = await learnHubApiIsRunning();
   const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim() || null;
-  if (connectionMode === "--lan" && apiAlreadyRunning && (await portIsOpen(8081))) {
+  const apiAlreadyRunning = configuredApiUrl ? false : await learnHubApiIsRunning();
+  if (connectionMode === "--lan" && !configuredApiUrl && apiAlreadyRunning && (await portIsOpen(8081))) {
     console.log("LearnHub já está em execução (API na porta 3000 e Expo na porta 8081).");
     console.log("Use o terminal que já está aberto ou pressione R no Expo Go para recarregar.");
     return;
   }
 
   let api = null;
-  if (connectionMode === "--tunnel" && configuredApiUrl) {
+  if (configuredApiUrl) {
     console.log(`[API] Backend hospedado configurado: ${configuredApiUrl}`);
   } else if (apiAlreadyRunning) {
     console.log("[API] LearnHub já está ativa na porta 3000; reutilizando o processo existente.");
@@ -86,18 +111,26 @@ async function main() {
   let apiTunnel = null;
   let publicApiUrl = configuredApiUrl;
   if (connectionMode === "--tunnel" && !publicApiUrl) {
-    const tunnel = startApiTunnel();
+    const tunnel = startCloudflareTunnel("http://127.0.0.1:3000", "da API");
     apiTunnel = tunnel.child;
     publicApiUrl = await tunnel.ready;
     console.log(`[API] Túnel público conectado: ${publicApiUrl}`);
-  } else if (connectionMode === "--tunnel" && publicApiUrl) {
-    console.log(`[API] Usando API hospedada: ${publicApiUrl}`);
+  }
+
+  let metroTunnel = null;
+  let packagerProxyUrl = null;
+  if (connectionMode === "--tunnel") {
+    const tunnel = startCloudflareTunnel("http://127.0.0.1:8081", "do Expo");
+    metroTunnel = tunnel.child;
+    packagerProxyUrl = await tunnel.ready;
+    console.log(`[Expo] Túnel público conectado: ${packagerProxyUrl}`);
   }
 
   // O Expo recebe o TTY diretamente para preservar a interface interativa e o QR Code.
   const expoCli = path.join(projectRoot, "node_modules", "expo", "bin", "cli");
-  // O modo offline ainda publica o Metro na rede local e evita consultas externas em redes restritas.
-  const expoArguments = [expoCli, "start", connectionMode === "--lan" ? "--offline" : "--tunnel"];
+  // Em LAN, o modo offline evita consultas externas. No túnel, o Cloudflare
+  // publica o Metro e EXPO_PACKAGER_PROXY_URL gera o endereço público do QR.
+  const expoArguments = [expoCli, "start", connectionMode === "--lan" ? "--offline" : "--lan"];
   const expo = spawn(process.execPath, expoArguments, {
     cwd: projectRoot,
     stdio: "inherit",
@@ -107,6 +140,7 @@ async function main() {
         ? { REACT_NATIVE_PACKAGER_HOSTNAME: getPreferredLocalIPv4() }
         : {}),
       ...(publicApiUrl ? { EXPO_PUBLIC_API_URL: publicApiUrl } : {}),
+      ...(packagerProxyUrl ? { EXPO_PACKAGER_PROXY_URL: packagerProxyUrl } : {}),
     },
   });
 
@@ -116,6 +150,7 @@ async function main() {
     stopping = true;
     if (api && !api.killed) api.kill();
     if (apiTunnel && !apiTunnel.killed) apiTunnel.kill();
+    if (metroTunnel && !metroTunnel.killed) metroTunnel.kill();
     if (!expo.killed) expo.kill();
   }
 

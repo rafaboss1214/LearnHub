@@ -1,6 +1,11 @@
 const fs = require("node:fs");
 const net = require("node:net");
 const path = require("node:path");
+const dotenv = require("dotenv");
+
+const projectRoot = path.resolve(__dirname, "..");
+dotenv.config({ path: path.join(projectRoot, ".env"), quiet: true });
+
 const env = require("../backend/src/config/env");
 const { testDatabaseConnection, closeDatabasePool } = require("../backend/src/config/database");
 const { getLocalIPv4Addresses, getPreferredLocalIPv4 } = require("../backend/src/utils/network");
@@ -19,9 +24,9 @@ function checkPort(port) {
   });
 }
 
-async function checkHealth(url) {
+async function checkHealth(url, timeoutMs = 3000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, { signal: controller.signal });
     const body = await response.json().catch(() => ({}));
@@ -35,6 +40,7 @@ async function checkHealth(url) {
 
 async function diagnose() {
   const envExists = fs.existsSync(path.resolve(__dirname, "../backend/.env"));
+  const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") || null;
   const addresses = getLocalIPv4Addresses();
   const preferredAddress = getPreferredLocalIPv4();
   const port = await checkPort(env.PORT);
@@ -43,6 +49,27 @@ async function diagnose() {
   console.log("DIAGNÓSTICO LEARNHUB");
   console.log("====================================");
   console.log(`Node.js: ${process.version}`);
+  console.log(`Modo da API: ${configuredApiUrl ? "hospedada" : "local"}`);
+  if (configuredApiUrl) {
+    console.log(`API hospedada: ${configuredApiUrl}`);
+    const hostedHealth = await checkHealth(`${configuredApiUrl}/api/health`, 60000);
+    if (hostedHealth.reachable) {
+      console.log(`/api/health: HTTP ${hostedHealth.status} ${JSON.stringify(hostedHealth.body)}`);
+    } else {
+      console.log(`/api/health: não respondeu em ${configuredApiUrl}`);
+    }
+    console.log("====================================");
+    await closeDatabasePool().catch(() => undefined);
+    if (
+      !hostedHealth.reachable ||
+      hostedHealth.status !== 200 ||
+      hostedHealth.body?.database !== "connected"
+    ) {
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   console.log(`backend/.env: ${envExists ? "encontrado" : "NÃO encontrado"}`);
   console.log(`IP local preferencial: ${preferredAddress || "não encontrado"}`);
   console.log(`Interfaces válidas: ${addresses.map((item) => `${item.name}=${item.address}`).join(", ") || "nenhuma"}`);

@@ -79,7 +79,7 @@ export default function CreateProjectScreen({ navigation }: any) {
           }
         }
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert("Erro", "Não foi possível publicar o projeto.");
     }
   }

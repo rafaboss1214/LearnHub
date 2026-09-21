@@ -5,8 +5,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { clearSession } from "../services/auth";
 
 import TabNavigator from "./TabNavigator";
-import ProfileScreen from "../screens/ProfileScreen";
-import CreateProjectScreen from "../screens/CreateProjectScreen";
+import ProfileScreen from "../screens/ProfileOverviewScreen";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const Drawer = createDrawerNavigator();
@@ -104,13 +103,6 @@ export default function DrawerMenu() {
         component={SettingsScreen}
         options={{
           drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="CriarProjeto"
-        component={CreateProjectScreen}
-        options={{
-          drawerItemStyle: { display: "none" },
         }}
       />
     </Drawer.Navigator>

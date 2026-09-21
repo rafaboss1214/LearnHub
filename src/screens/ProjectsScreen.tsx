@@ -134,7 +134,7 @@ export default function ProjectsScreen({ navigation }: any) {
             onPress={() => {
               try {
                 navigation.getParent()?.navigate("CriarProjeto");
-              } catch (e) {
+              } catch {
                 navigation.navigate("CriarProjeto");
               }
             }}

@@ -19,4 +19,14 @@ async function me(request, response) {
   return response.status(200).json({ success: true, user });
 }
 
-module.exports = { register, login, me };
+async function updateMe(request, response) {
+  const user = await authService.updateUser(request.auth.sub, request.body);
+  return response.status(200).json({ success: true, user });
+}
+
+async function deleteMe(request, response) {
+  await authService.deleteUser(request.auth.sub);
+  return response.status(204).end();
+}
+
+module.exports = { register, login, me, updateMe, deleteMe };

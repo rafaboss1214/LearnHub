@@ -1,6 +1,6 @@
 # LearnHub — Expo Go + Express + MySQL
 
-O LearnHub mantém as telas e a navegação originais do aplicativo e usa autenticação real:
+O LearnHub usa autenticação e CRUD persistentes, com todos os dados importantes salvos no MySQL:
 
 ```text
 Expo Go → API Express → MySQL/MariaDB
@@ -9,6 +9,9 @@ Expo Go → API Express → MySQL/MariaDB
 - Cadastro: `POST /api/auth/register`
 - Login: `POST /api/auth/login`
 - Sessão atual: `GET /api/auth/me`
+- Projetos: criação, listagem, detalhes, edição e exclusão
+- Interações: favoritos, apoios e comentários
+- Perfil: consulta, edição e exclusão da própria conta
 - Diagnóstico da API e do banco: `GET /api/health`
 - Porta padrão da API: `3000`
 - O backend escuta em `0.0.0.0`, portanto aceita conexões da rede local.
@@ -59,7 +62,9 @@ O projeto usa npm workspaces. Esse único comando instala as dependências do Ex
 
 ## Passo 2 — criar o banco SQL
 
-O arquivo [database/database.sql](database/database.sql) cria o banco `learnhub` e a tabela `usuarios` do zero. Ele pode ser executado várias vezes com segurança.
+O arquivo [database/database.sql](database/database.sql) cria as tabelas `usuarios`, `projetos`, `projetos_favoritos`, `projetos_apoios` e `comentarios` no banco selecionado. Ele pode ser executado várias vezes com segurança.
+
+Ao iniciar, a API também executa uma migração idempotente: cria somente as tabelas ausentes e preserva os dados existentes. Isso mantém o banco hospedado alinhado com a versão do app.
 
 ### Opção A: MySQL Workbench
 
@@ -157,8 +162,8 @@ Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.h
 
 A ordem de resolução é:
 
-1. IPv4 do host do Metro/Expo em LAN;
-2. `EXPO_PUBLIC_API_URL`, se configurada;
+1. `EXPO_PUBLIC_API_URL`, se configurada;
+2. IPv4 do host do Metro/Expo em LAN;
 3. `http://localhost:3000` somente na versão web.
 
 ## Passo 6 — testar o cadastro
@@ -241,7 +246,7 @@ Com MySQL importado e backend em execução, rode em outro terminal:
 npm run test:auth
 ```
 
-O teste real cobre:
+O teste real de autenticação cobre:
 
 - `GET /api/health`;
 - cadastro válido (`201`);
@@ -269,6 +274,7 @@ npm run diagnose
 O comando verifica e exibe:
 
 - versão do Node.js;
+- a API hospedada e a conexão do banco quando `EXPO_PUBLIC_API_URL` estiver configurada;
 - presença de `backend/.env`;
 - IPv4 local e adaptador escolhido;
 - porta `3000` livre ou em uso;
@@ -314,13 +320,15 @@ Se o QR/Metro em LAN for bloqueado:
 npm run start:tunnel
 ```
 
-Ou, para iniciar backend local e Expo em modo túnel juntos:
+Ou use o comando equivalente que explicita o ambiente completo:
 
 ```powershell
 npm run dev:tunnel
 ```
 
-Importante: o túnel do Expo transporta o bundle do Metro até o Expo Go. Ele **não** publica automaticamente a API Express local. Para autenticação fora da LAN, use também um túnel HTTP separado para a porta `3000` e configure `EXPO_PUBLIC_API_URL` como explicado acima.
+Esses comandos usam o Cloudflare Quick Tunnel para publicar o Metro, evitando o agente ngrok 2.x antigo embutido no Expo. O executável é procurado em `tools/cloudflared.exe` no Windows, em `tools/cloudflared` nos outros sistemas ou no caminho definido por `CLOUDFLARED_PATH`.
+
+O túnel do Metro não publica automaticamente uma API Express local. Quando `EXPO_PUBLIC_API_URL` está configurada, o app usa diretamente essa API hospedada. Sem essa variável, o script também publica a porta `3000` por um segundo túnel Cloudflare.
 
 ## Rotas da API
 
@@ -330,6 +338,17 @@ Importante: o túnel do Expo transporta o bundle do Metro até o Expo Go. Ele **
 | `POST` | `/api/auth/register` | Cria usuário com hash bcrypt |
 | `POST` | `/api/auth/login` | Valida e-mail/senha e retorna sessão |
 | `GET` | `/api/auth/me` | Retorna o usuário da sessão JWT |
+| `PUT` | `/api/auth/me` | Atualiza nome, e-mail ou senha da sessão |
+| `DELETE` | `/api/auth/me` | Exclui a própria conta |
+| `GET` | `/api/projects` | Lista projetos e contadores |
+| `POST` | `/api/projects` | Cria projeto (diretor) |
+| `GET` | `/api/projects/:id` | Retorna detalhes e comentários |
+| `PUT` | `/api/projects/:id` | Edita projeto (diretor) |
+| `DELETE` | `/api/projects/:id` | Exclui projeto (diretor) |
+| `POST` | `/api/projects/:id/favorite` | Alterna favorito |
+| `POST` | `/api/projects/:id/support` | Alterna apoio |
+| `POST` | `/api/projects/:id/comments` | Adiciona comentário |
+| `DELETE` | `/api/projects/comments/:id` | Exclui comentário autorizado |
 
 ## Checklist antes de apresentar
 

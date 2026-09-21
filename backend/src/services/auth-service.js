@@ -85,6 +85,36 @@ async function getUserById(id) {
   return publicUser(user);
 }
 
+async function updateUser(id, payload) {
+  const current = await usersRepository.findById(id);
+  if (!current) throw new AppError(404, "Usuário não encontrado.");
+
+  const fields = {};
+  if (Object.hasOwn(payload || {}, "nome")) {
+    const nome = String(payload.nome || "").trim();
+    if (!nome || nome.length > 150) throw new AppError(400, "Informe um nome válido.");
+    fields.nome = nome;
+  }
+  if (Object.hasOwn(payload || {}, "email")) {
+    const email = normalizeEmail(payload.email);
+    if (email.length > 255 || !EMAIL_PATTERN.test(email)) throw new AppError(400, "Informe um e-mail válido.");
+    const existing = await usersRepository.findByEmail(email);
+    if (existing && String(existing.id) !== String(id)) throw new AppError(409, "Este e-mail já está cadastrado.");
+    fields.email = email;
+  }
+  if (Object.hasOwn(payload || {}, "senha") && payload.senha) {
+    const senha = String(payload.senha);
+    if (senha.length < 8 || senha.length > 72) throw new AppError(400, "A senha deve ter entre 8 e 72 caracteres.");
+    fields.passwordHash = await bcrypt.hash(senha, BCRYPT_ROUNDS);
+  }
+  if (!Object.keys(fields).length) throw new AppError(400, "Informe ao menos um campo para atualizar.");
+  return publicUser(await usersRepository.update(id, fields));
+}
+
+async function deleteUser(id) {
+  if (!await usersRepository.remove(id)) throw new AppError(404, "Usuário não encontrado.");
+}
+
 module.exports = {
   normalizeEmail,
   validateRegistration,
@@ -92,4 +122,6 @@ module.exports = {
   register,
   login,
   getUserById,
+  updateUser,
+  deleteUser,
 };

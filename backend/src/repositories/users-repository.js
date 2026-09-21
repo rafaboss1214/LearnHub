@@ -26,4 +26,21 @@ async function create({ nome, email, passwordHash, tipo }) {
   return findById(result.insertId);
 }
 
-module.exports = { findByEmail, findById, create };
+async function update(id, fields) {
+  const columns = { nome: "nome", email: "email", passwordHash: "senha" };
+  const entries = Object.entries(fields).filter(([key]) => columns[key]);
+  if (!entries.length) return findById(id);
+  const setClause = entries.map(([key]) => `${columns[key]} = ?`).join(", ");
+  await pool.execute(
+    `UPDATE usuarios SET ${setClause} WHERE id = ?`,
+    [...entries.map(([, value]) => value), id],
+  );
+  return findById(id);
+}
+
+async function remove(id) {
+  const [result] = await pool.execute("DELETE FROM usuarios WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+}
+
+module.exports = { findByEmail, findById, create, update, remove };
