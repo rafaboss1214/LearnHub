@@ -23,7 +23,8 @@
     "diagnose": "node scripts/diagnose.js",
     "setup:firewall": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure-firewall.ps1",
     "test": "node --test backend/tests/validation.test.js backend/tests/network.test.js backend/tests/api.test.js",
-    "test:auth": "node backend/tests/auth.integration.js"
+    "test:auth": "node backend/tests/auth.integration.js",
+    "test:hosted": "node backend/tests/hosted-crud.integration.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
