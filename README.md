@@ -1,9 +1,9 @@
-# LearnHub — Expo Go + Express + MySQL
+# LearnHub — Expo Go + API hospedada + MySQL
 
 O LearnHub usa autenticação e CRUD persistentes, com todos os dados importantes salvos no MySQL:
 
 ```text
-Expo Go → API Express → MySQL/MariaDB
+Expo Go → API Express hospedada → MySQL hospedado
 ```
 
 - Cadastro: `POST /api/auth/register`
@@ -20,9 +20,31 @@ Expo Go → API Express → MySQL/MariaDB
 
 - Node.js 20.19 ou superior (requisito mínimo do Expo SDK 54)
 - npm
-- MySQL 8+ ou MariaDB compatível
 - Expo Go atualizado no celular
-- Computador e celular na mesma rede Wi-Fi para uso por LAN
+- Internet disponível para acessar a API e o banco hospedados
+
+O MySQL local é opcional e serve apenas para desenvolvimento avançado. Na máquina da escola, não é necessário instalar MySQL, copiar `.env` ou conhecer as credenciais do banco.
+
+## Início rápido em outra máquina
+
+1. Instale o Node.js 20.19 ou mais recente.
+2. Copie ou clone a pasta completa do projeto.
+3. Dê dois cliques em `INICIAR_LEARNHUB.cmd`.
+
+O iniciador instala as dependências quando necessário, testa a API hospedada e tenta abrir um túnel para o Expo. Se a rede bloquear o túnel, ele muda automaticamente para LAN; nesse caso, conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
+
+Também é possível usar o terminal:
+
+```powershell
+npm install
+npm run escola
+```
+
+Para uma rede comum, sem túnel:
+
+```powershell
+npm run dev
+```
 
 ## Estrutura relevante
 
@@ -60,7 +82,7 @@ npm install
 
 O projeto usa npm workspaces. Esse único comando instala as dependências do Expo e do backend.
 
-## Passo 2 — criar o banco SQL
+## Passo 2 — criar um banco SQL local (opcional)
 
 O arquivo [database/database.sql](database/database.sql) cria as tabelas `usuarios`, `projetos`, `projetos_favoritos`, `projetos_apoios` e `comentarios` no banco selecionado. Ele pode ser executado várias vezes com segurança.
 
@@ -96,7 +118,7 @@ Get-Content database/database.sql | mysql -u root -p
 
 Se o usuário `root` não tiver senha, pressione Enter quando solicitado. Se o comando `mysql` não for encontrado, use o caminho completo para `mysql.exe` ou prefira o Workbench/phpMyAdmin.
 
-## Passo 3 — configurar o backend
+## Passo 3 — configurar o backend local (opcional)
 
 Copie o exemplo:
 
@@ -121,13 +143,19 @@ O arquivo `backend/.env` está no `.gitignore`; não envie senha real ao Git. A 
 
 ## Passo 4 — iniciar o projeto
 
-Para iniciar backend e Expo juntos:
+Para usar a API e o banco hospedados, basta iniciar o Expo:
 
 ```powershell
 npm run dev
 ```
 
-O terminal mantém os dois processos visíveis. O backend testa o MySQL antes de começar e mostra:
+O iniciador consulta `/api/health` antes de abrir o Expo. Se quiser desenvolver com banco local, use:
+
+```powershell
+npm run dev:local
+```
+
+Nesse modo, o terminal mantém os dois processos visíveis. O backend testa o MySQL antes de começar e mostra:
 
 ```text
 ====================================
@@ -163,8 +191,9 @@ Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.h
 A ordem de resolução é:
 
 1. `EXPO_PUBLIC_API_URL`, se configurada;
-2. IPv4 do host do Metro/Expo em LAN;
-3. `http://localhost:3000` somente na versão web.
+2. `expo.extra.apiUrl` do `app.json` (API hospedada padrão);
+3. IPv4 do host do Metro/Expo em LAN, somente se não houver API hospedada;
+4. `http://localhost:3000` somente na versão web.
 
 ## Passo 6 — testar o cadastro
 
@@ -274,7 +303,8 @@ npm run diagnose
 O comando verifica e exibe:
 
 - versão do Node.js;
-- a API hospedada e a conexão do banco quando `EXPO_PUBLIC_API_URL` estiver configurada;
+- presença das dependências do Expo;
+- a API hospedada definida pelo `.env` ou pelo `app.json` e a conexão do banco;
 - presença de `backend/.env`;
 - IPv4 local e adaptador escolhido;
 - porta `3000` livre ou em uso;
@@ -326,9 +356,9 @@ Ou use o comando equivalente que explicita o ambiente completo:
 npm run dev:tunnel
 ```
 
-Esses comandos usam o Cloudflare Quick Tunnel para publicar o Metro, evitando o agente ngrok 2.x antigo embutido no Expo. O executável é procurado em `tools/cloudflared.exe` no Windows, em `tools/cloudflared` nos outros sistemas ou no caminho definido por `CLOUDFLARED_PATH`.
+Esses comandos usam o Cloudflare Quick Tunnel para publicar o Metro. O executável é procurado em `tools/cloudflared.exe` no Windows, em `tools/cloudflared` nos outros sistemas ou no caminho definido por `CLOUDFLARED_PATH`. Se ele não existir, o iniciador baixa uma versão oficial fixada para a pasta local `tools`. Se o download ou o túnel for bloqueado pela rede escolar, o app continua automaticamente em LAN.
 
-O túnel do Metro não publica automaticamente uma API Express local. Quando `EXPO_PUBLIC_API_URL` está configurada, o app usa diretamente essa API hospedada. Sem essa variável, o script também publica a porta `3000` por um segundo túnel Cloudflare.
+O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hospedado já está no `app.json`. No modo opcional `dev:local`, o script também publica a porta `3000` por um segundo túnel quando necessário.
 
 ## Rotas da API
 
@@ -352,12 +382,9 @@ O túnel do Metro não publica automaticamente uma API Express local. Quando `EX
 
 ## Checklist antes de apresentar
 
-- [ ] MySQL iniciado
-- [ ] Banco criado
-- [ ] `backend/.env` configurado
+- [ ] Node.js 20.19 ou superior instalado
 - [ ] `npm install` executado
-- [ ] Backend iniciado
-- [ ] Banco conectado
+- [ ] `npm run diagnose` confirma API e banco conectados
 - [ ] `/api/health` funcionando
 - [ ] Expo iniciado
 - [ ] QR Code aparecendo

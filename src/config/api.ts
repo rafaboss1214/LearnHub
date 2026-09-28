@@ -42,6 +42,13 @@ function resolveApiUrl() {
     return { url: withoutTrailingSlash(configuredUrl), source: "environment" as const };
   }
 
+  // A API de produção é pública e faz parte da configuração versionada do app.
+  // Isso permite abrir o projeto em outra máquina sem copiar um arquivo .env.
+  const hostedUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof hostedUrl === "string" && hostedUrl.trim()) {
+    return { url: withoutTrailingSlash(hostedUrl), source: "app-config" as const };
+  }
+
   // SDK 54: hostUri contém o host usado pelo Metro no Expo Go em modo LAN.
   const metroHost = extractHost(Constants.expoConfig?.hostUri);
   if (isUsableMetroHost(metroHost)) {
@@ -63,6 +70,6 @@ export const API_URL_SOURCE = resolvedApi.source;
 export function requireApiUrl() {
   if (API_URL) return API_URL;
   throw new Error(
-    "Não foi possível localizar o servidor. Inicie o Expo em modo LAN ou configure EXPO_PUBLIC_API_URL.",
+    "Não foi possível localizar o servidor. Verifique a configuração apiUrl do app ou defina EXPO_PUBLIC_API_URL.",
   );
 }

@@ -4,6 +4,7 @@ const path = require("node:path");
 const dotenv = require("dotenv");
 
 const projectRoot = path.resolve(__dirname, "..");
+const appConfig = require(path.join(projectRoot, "app.json"));
 dotenv.config({ path: path.join(projectRoot, ".env"), quiet: true });
 
 const env = require("../backend/src/config/env");
@@ -40,7 +41,13 @@ async function checkHealth(url, timeoutMs = 3000) {
 
 async function diagnose() {
   const envExists = fs.existsSync(path.resolve(__dirname, "../backend/.env"));
-  const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") || null;
+  const configuredApiUrl =
+    process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") ||
+    appConfig.expo?.extra?.apiUrl?.trim().replace(/\/+$/, "") ||
+    null;
+  const expoInstalled = fs.existsSync(path.join(projectRoot, "node_modules", "expo", "bin", "cli"));
+  const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+  const nodeCompatible = nodeMajor > 20 || (nodeMajor === 20 && nodeMinor >= 19);
   const addresses = getLocalIPv4Addresses();
   const preferredAddress = getPreferredLocalIPv4();
   const port = await checkPort(env.PORT);
@@ -48,7 +55,8 @@ async function diagnose() {
   console.log("====================================");
   console.log("DIAGNÓSTICO LEARNHUB");
   console.log("====================================");
-  console.log(`Node.js: ${process.version}`);
+  console.log(`Node.js: ${process.version} (${nodeCompatible ? "compatível" : "INCOMPATÍVEL; requer 20.19+"})`);
+  console.log(`Dependências: ${expoInstalled ? "instaladas" : "NÃO instaladas (execute npm install)"}`);
   console.log(`Modo da API: ${configuredApiUrl ? "hospedada" : "local"}`);
   if (configuredApiUrl) {
     console.log(`API hospedada: ${configuredApiUrl}`);
@@ -67,6 +75,8 @@ async function diagnose() {
     ) {
       process.exitCode = 1;
     }
+    if (!expoInstalled) process.exitCode = 1;
+    if (!nodeCompatible) process.exitCode = 1;
     return;
   }
 

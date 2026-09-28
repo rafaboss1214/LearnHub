@@ -12,6 +12,8 @@
     "start:tunnel": "node scripts/start.js --tunnel",
     "dev": "node scripts/start.js --lan",
     "dev:tunnel": "node scripts/start.js --tunnel",
+    "dev:local": "node scripts/start.js --lan --local-api",
+    "escola": "node scripts/start.js --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
