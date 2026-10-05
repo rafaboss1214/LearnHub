@@ -30,7 +30,7 @@ if not exist "node_modules\expo\bin\cli" (
 )
 
 echo Iniciando o LearnHub no modo compativel com rede escolar...
-call npm run escola
+call npm start
 if errorlevel 1 (
   echo.
   echo O LearnHub nao iniciou. Execute npm run diagnose e envie o resultado.

@@ -6,9 +6,9 @@
     "backend"
   ],
   "scripts": {
-    "start": "expo start --offline",
-    "app": "expo start --offline",
-    "start:expo": "expo start --offline",
+    "start": "node scripts/start.js --tunnel",
+    "app": "node scripts/start.js --lan",
+    "start:expo": "node scripts/start.js --lan",
     "start:tunnel": "node scripts/start.js --tunnel",
     "dev": "node scripts/start.js --lan",
     "dev:tunnel": "node scripts/start.js --tunnel",

@@ -189,6 +189,39 @@ function startCloudflareTunnel(executable, targetUrl, label) {
   return { child, ready };
 }
 
+async function waitForExpoManifest(baseUrl, timeoutMs = 120000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(baseUrl, {
+        headers: {
+          accept: "application/expo+json,application/json",
+          "expo-platform": "android",
+          "expo-protocol-version": "1",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+      const contentType = response.headers.get("content-type") || "";
+      const manifest = await response.json().catch(() => null);
+      if (
+        response.ok &&
+        contentType.includes("application/expo+json") &&
+        manifest?.launchAsset?.url
+      ) {
+        return manifest;
+      }
+      lastError = new Error(`HTTP ${response.status} (${contentType || "sem content-type"})`);
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+
+  throw lastError || new Error("o manifesto do Expo não ficou disponível a tempo");
+}
+
 async function main() {
   assertNodeVersion();
   const expoCli = getExpoCli();
@@ -273,32 +306,61 @@ async function main() {
   });
 
   let stopping = false;
-  function stopChildren() {
+  let desiredExitCode = null;
+  function stopChildren(exitCode = 0) {
     if (stopping) return;
     stopping = true;
+    desiredExitCode = exitCode;
     if (api && !api.killed) api.kill();
     if (apiTunnel && !apiTunnel.killed) apiTunnel.kill();
     if (metroTunnel && !metroTunnel.killed) metroTunnel.kill();
     if (!expo.killed) expo.kill();
   }
 
+  const verificationUrl = packagerProxyUrl || `http://127.0.0.1:${metroPort}`;
+  void waitForExpoManifest(verificationUrl)
+    .then((manifest) => {
+      if (stopping) return;
+      console.log("====================================");
+      console.log("LEARNHUB PRONTO");
+      console.log(`Expo SDK: ${manifest.runtimeVersion || "57"}`);
+      console.log(`Conexão: ${effectiveTunnel ? "túnel público" : "rede local"}`);
+      console.log("Abra o Expo Go e leia o QR Code exibido acima.");
+      console.log("Para encerrar, pressione Ctrl+C uma vez.");
+      console.log("====================================");
+    })
+    .catch((error) => {
+      if (stopping) return;
+      console.warn(`[Expo] O Metro iniciou, mas o manifesto não pôde ser validado: ${error.message}`);
+      if (effectiveTunnel) {
+        console.warn("[Expo] Se o celular não conectar, execute npm run dev usando o mesmo Wi-Fi ou hotspot.");
+      }
+    });
+
   expo.on("error", (error) => {
     console.error("[Expo] Não foi possível iniciar:", error.message);
-    stopChildren();
+    stopChildren(1);
     process.exitCode = 1;
   });
   expo.on("exit", (code) => {
-    stopChildren();
-    process.exitCode = code ?? 0;
+    if (!stopping) stopChildren(code ?? 0);
+    process.exitCode = desiredExitCode ?? code ?? 0;
   });
   api?.on("exit", (code) => {
     if (!stopping && code !== 0) {
       console.error("[API] O backend local foi encerrado. Rode npm run diagnose para ver o motivo.");
-      stopChildren();
+      stopChildren(code ?? 1);
       process.exitCode = code ?? 1;
     }
   });
-  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, stopChildren);
+  for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.once(signal, () => {
+      console.log("\nEncerrando o LearnHub...");
+      stopChildren(0);
+      process.exitCode = 0;
+      setTimeout(() => process.exit(0), 100);
+    });
+  }
 }
 
 main().catch((error) => {

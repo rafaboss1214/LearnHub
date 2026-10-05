@@ -37,8 +37,10 @@ Também é possível usar o terminal:
 
 ```powershell
 npm install
-npm run escola
+npm start
 ```
+
+`npm start` é o comando oficial. Ele confirma se a API hospedada e o banco estão disponíveis, cria o túnel do Expo, inicia o Metro e valida o manifesto antes de mostrar **LEARNHUB PRONTO**. `npm run escola` continua disponível como alias de compatibilidade.
 
 Para uma rede comum, sem túnel:
 
@@ -50,7 +52,7 @@ npm run dev
 
 ```text
 LearnHub/
-├── app/                         # entrada e navegação Expo existentes
+├── App.tsx                      # entrada e navegação do aplicativo
 ├── src/
 │   ├── config/api.ts            # único local que resolve a URL da API
 │   ├── screens/                 # telas existentes, preservadas
@@ -143,13 +145,15 @@ O arquivo `backend/.env` está no `.gitignore`; não envie senha real ao Git. A 
 
 ## Passo 4 — iniciar o projeto
 
-Para usar a API e o banco hospedados, basta iniciar o Expo:
+Para usar a API e o banco hospedados, use o iniciador completo:
 
 ```powershell
-npm run dev
+npm start
 ```
 
-O iniciador consulta `/api/health` antes de abrir o Expo. Se quiser desenvolver com banco local, use:
+O iniciador consulta `/api/health`, confirma a conexão do banco, abre o túnel do Expo e valida o manifesto. Se o túnel estiver bloqueado, ele continua automaticamente em LAN. Para iniciar diretamente em LAN, use `npm run dev`.
+
+Se quiser desenvolver com banco local, use:
 
 ```powershell
 npm run dev:local
@@ -347,12 +351,14 @@ Depois, reinicie/recarregue completamente o Expo Go. Nunca exponha o MySQL diret
 Se o QR/Metro em LAN for bloqueado:
 
 ```powershell
-npm run start:tunnel
+npm start
 ```
 
-Ou use o comando equivalente que explicita o ambiente completo:
+Os comandos abaixo são aliases equivalentes, mantidos para compatibilidade:
 
 ```powershell
+npm run escola
+npm run start:tunnel
 npm run dev:tunnel
 ```
 

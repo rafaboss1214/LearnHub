@@ -1,627 +1,202 @@
 ============================================================
 GUIA DEFINITIVO DE INSTALAÇÃO E APRESENTAÇÃO - LEARNHUB
-Expo Go + Node.js + Express + MySQL + Cloudflare Tunnel
+Expo SDK 57 + API e MySQL hospedados
 ============================================================
 
-Este guia explica como executar o LearnHub em outro computador,
-inclusive quando o celular estiver usando dados móveis e o computador
-estiver conectado a outra rede.
-
-
-============================================================
-1. COMO O SISTEMA FUNCIONA
-============================================================
-
-Cadastro e login seguem este caminho:
-
-Expo Go no celular
-        -> requisição HTTP
-API Node.js/Express no computador
-        -> consulta SQL
-MySQL no computador
-
-Quando celular e computador estão em redes diferentes:
-
-Expo Go
-        -> túnel do Expo
-Metro no computador
-
-Aplicativo
-        -> Cloudflare Tunnel
-API Express no computador
-        -> conexão local
-MySQL no computador
-
-O Cloudflare publica somente a API Express. O MySQL não deve ser
-publicado diretamente na internet.
+Este guia descreve a configuração atual do projeto. A API e o banco
+de dados ficam hospedados; o computador da escola executa somente o
+Expo/Metro. Não é necessário instalar MySQL, configurar backend/.env
+ou abrir um túnel manual para a API.
 
 
 ============================================================
-2. PROGRAMAS NECESSÁRIOS
+1. PROGRAMAS NECESSÁRIOS
 ============================================================
 
 - Node.js 22.13 ou superior;
-- npm;
-- MySQL Server ou MariaDB;
-- Expo Go no celular;
-- cloudflared.exe, se celular e computador estiverem em redes diferentes;
-- acesso à internet para instalar dependências e criar os túneis.
+- npm (instalado junto com o Node.js);
+- Expo Go compatível com o Expo SDK 57;
+- acesso à internet no computador e no celular.
 
-Confirme o Node.js:
+Confirme as versões no CMD:
 
 node --version
 npm --version
 
+Se o Node.js for mais antigo que 22.13, atualize-o antes de continuar.
+
 
 ============================================================
-3. PREPARAR O PROJETO EM UM COMPUTADOR NOVO
+2. PREPARAR EM UM COMPUTADOR NOVO
 ============================================================
 
-Abra o CMD e entre na pasta do projeto:
+Copie ou clone a pasta completa do projeto. Depois, abra o CMD:
 
 cd /d C:\CAMINHO\PARA\LearnHub
-
-Exemplo:
-
-cd /d C:\Users\rafae\AppLearnHub\LearnHub
-
-Instale todas as dependências:
-
 npm install
 
-O projeto utiliza npm workspaces. Um único npm install prepara o
-aplicativo Expo e o backend.
+O projeto utiliza npm workspaces. Um único npm install prepara o app
+e também as dependências do backend usadas em desenvolvimento local.
 
 
 ============================================================
-4. CONFIGURAR O MYSQL
+3. INICIAR PELO CMD
 ============================================================
 
-Confirme se existe um serviço MySQL:
+Na pasta do projeto, execute:
 
-sc query type= service state= all | findstr /I mysql
+npm start
 
-O nome normalmente é MySQL80. Para iniciar:
+Esse é o comando oficial. Ele faz automaticamente:
 
-net start MySQL80
+1. valida a versão do Node.js;
+2. testa a API hospedada e a conexão com o banco;
+3. prepara o Cloudflare Tunnel do Expo;
+4. inicia o Metro;
+5. valida o manifesto que será aberto pelo Expo Go.
 
-Se o serviço tiver outro nome, use o nome mostrado pelo primeiro
-comando.
+Quando estiver pronto, o terminal mostrará:
 
-Teste o acesso ao MySQL:
+====================================
+LEARNHUB PRONTO
+Expo SDK: exposdk:57.0.0
+Conexão: túnel público
+====================================
 
-mysql -u root -p -h localhost -P 3306
+Abra o Expo Go e leia o QR Code. Para encerrar, pressione Ctrl+C uma
+vez. Encerrar normalmente não é tratado como falha.
 
-Digite a senha definida na instalação. Para sair:
+O comando antigo continua funcionando como alias:
 
-exit;
-
-
-============================================================
-5. CONFIGURAR BACKEND/.ENV
-============================================================
-
-Na raiz do projeto:
-
-copy backend\.env.example backend\.env
-notepad backend\.env
-
-Configure:
-
-PORT=3000
-
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD="SUA_SENHA_DO_MYSQL"
-DB_NAME=learnhub
-
-JWT_SECRET=uma-frase-aleatoria-com-mais-de-32-caracteres
-CORS_ORIGIN=*
-
-Se o usuário root não tiver senha:
-
-DB_PASSWORD=
-
-Se a senha tiver #, espaços ou caracteres especiais, use aspas:
-
-DB_PASSWORD="Minha#Senha@123"
-
-Não coloque espaços antes ou depois do sinal de igual.
-
-Correto:
-
-DB_PASSWORD="MinhaSenha"
-
-Incorreto:
-
-DB_PASSWORD = "MinhaSenha"
+npm run escola
 
 
 ============================================================
-6. CRIAR O BANCO LEARNHUB
+4. INICIAR COM DOIS CLIQUES
 ============================================================
 
-No CMD, a partir da raiz do projeto:
+Também é possível dar dois cliques em:
 
-mysql -u root -p < database\database.sql
+INICIAR_LEARNHUB.cmd
 
-Digite a senha do MySQL.
-
-O arquivo cria automaticamente:
-
-- banco learnhub;
-- tabela usuarios;
-- e-mail único;
-- perfis colaborador e diretor;
-- campo de senha para hash bcrypt;
-- data de criação.
-
-Se o comando mysql não for reconhecido, use o MySQL Workbench:
-
-1. Abra o Workbench;
-2. conecte-se ao MySQL;
-3. abra database\database.sql;
-4. execute todo o arquivo pelo ícone de raio.
-
-Também é possível usar o caminho completo:
-
-"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < database\database.sql
-
-Para conferir:
-
-mysql -u root -p
-
-SHOW DATABASES;
-USE learnhub;
-SHOW TABLES;
-DESCRIBE usuarios;
-exit;
+O arquivo instala dependências quando necessário e chama npm start.
+Se houver um erro real, a janela permanece aberta para mostrar a
+mensagem de diagnóstico.
 
 
 ============================================================
-7. TESTAR O BACKEND LOCALMENTE
+5. QUANDO A REDE BLOQUEAR O TÚNEL
 ============================================================
 
-Abra o primeiro CMD:
+O iniciador tenta usar o túnel público porque redes escolares costumam
+isolar dispositivos. Se a rede bloquear o Cloudflare, ele muda para
+LAN automaticamente.
 
-cd /d C:\CAMINHO\PARA\LearnHub
-npm run backend
-
-O resultado correto é:
-
-Banco de dados conectado com sucesso.
-API INICIADA COM SUCESSO
-Porta: 3000
-Banco de dados: CONECTADO
-
-Não feche esse CMD.
-
-Abra no navegador do computador:
-
-http://localhost:3000/api/health
-
-Resposta esperada:
-
-{"success":true,"api":"online","database":"connected"}
-
-Não prossiga enquanto o health local não estiver funcionando.
-
-Diagnóstico completo:
-
-npm run diagnose
-
-
-============================================================
-8. USO NA MESMA REDE LOCAL
-============================================================
-
-Se celular e computador estiverem na mesma rede Wi-Fi, use:
+Para iniciar diretamente em LAN:
 
 npm run dev
 
-Esse comando inicia backend e Expo juntos e mostra o QR Code.
-
-O aplicativo detecta automaticamente o IP usado pelo Metro. Não é
-necessário editar IP dentro dos arquivos do projeto.
-
-Permita Node.js no Firewall do Windows, principalmente em redes
-privadas.
+Nesse modo, computador e celular devem estar no mesmo Wi-Fi ou hotspot.
+Permita Node.js em redes privadas quando o Firewall do Windows pedir.
 
 
 ============================================================
-9. USO COM DADOS MÓVEIS E SEM HOTSPOT
+6. DIAGNÓSTICO
 ============================================================
 
-Se o celular estiver nos dados móveis e o computador estiver em outra
-rede, eles não conseguem acessar uma API local diretamente.
+Para testar a configuração sem abrir o aplicativo:
 
-Será necessário usar dois túneis:
+npm run diagnose
 
-1. Cloudflare Tunnel para a API Express;
-2. túnel do Expo para o Metro.
+O estado correto da API hospedada é semelhante a:
 
-Baixe cloudflared.exe pelo site oficial da Cloudflare e salve, por
-exemplo, na pasta Downloads.
+API: online
+Banco de dados: connected
 
-
-============================================================
-10. CRIAR O TÚNEL DA API
-============================================================
-
-Mantenha o primeiro CMD com npm run backend aberto.
-
-Abra o segundo CMD e vá até a pasta do cloudflared.exe:
-
-cd /d C:\Users\SEU_USUARIO\Downloads
-
-Execute:
-
-cloudflared.exe tunnel --url http://localhost:3000
-
-Será apresentada uma URL parecida com:
-
-https://palavras-aleatorias.trycloudflare.com
-
-Não feche esse CMD.
-
-Os avisos abaixo normalmente não impedem o funcionamento:
-
-Cannot determine default configuration path
-Unable to determine the system root certificate pool
-
-O importante é aparecer:
-
-Your quick Tunnel has been created
-
-Teste pelo navegador do celular:
-
-https://palavras-aleatorias.trycloudflare.com/api/health
-
-Resposta esperada:
-
-{"success":true,"api":"online","database":"connected"}
+Se aparecer que a API ou o banco estão indisponíveis, confirme a
+internet e tente novamente. O npm start interrompe antes do Expo se o
+serviço hospedado estiver realmente indisponível.
 
 
 ============================================================
-11. CONFIGURAR A URL PÚBLICA NO EXPO
+7. DESENVOLVIMENTO LOCAL OPCIONAL
 ============================================================
 
-Na raiz do projeto:
+Somente quem quiser desenvolver com API e MySQL locais precisa copiar
+backend/.env.example para backend/.env e configurar o banco. Depois:
 
-notepad .env.local
+npm run dev:local
 
-Coloque somente a URL base recebida:
-
-EXPO_PUBLIC_API_URL=https://palavras-aleatorias.trycloudflare.com
-
-Regras:
-
-- não acrescente /api;
-- não acrescente /api/health;
-- não coloque barra no final;
-- não coloque aspas;
-- não deixe espaços ao redor do sinal de igual.
-
-Correto:
-
-EXPO_PUBLIC_API_URL=https://palavras-aleatorias.trycloudflare.com
-
-Incorreto:
-
-EXPO_PUBLIC_API_URL=https://palavras-aleatorias.trycloudflare.com/api
+Essa opção não é necessária para apresentar ou usar o sistema normal.
+Nunca publique a porta 3306 do MySQL diretamente na internet.
 
 
 ============================================================
-12. INICIAR O EXPO POR TÚNEL
+8. TESTAR O CRUD
 ============================================================
 
-Abra o terceiro CMD:
+No Expo Go, confirme:
 
-cd /d C:\CAMINHO\PARA\LearnHub
-npm run start:tunnel
+1. cadastro de um novo usuário;
+2. login com o usuário criado;
+3. consulta/listagem dos registros;
+4. edição de um registro;
+5. exclusão de um registro;
+6. logout e novo login.
 
-Leia o QR Code com o Expo Go.
-
-Durante a apresentação, mantenha abertos:
-
-CMD 1: npm run backend
-CMD 2: cloudflared.exe tunnel --url http://localhost:3000
-CMD 3: npm run start:tunnel
-
-Se qualquer um desses processos for encerrado, parte do sistema deixará
-de funcionar.
+As operações passam pelo aplicativo, pela API HTTPS hospedada e pelo
+MySQL hospedado. A senha deve permanecer armazenada somente como hash.
 
 
 ============================================================
-13. QUANDO A URL DO CLOUDFLARE MUDAR
+9. SOLUÇÕES RÁPIDAS
 ============================================================
 
-O Quick Tunnel é temporário. Toda vez que o cloudflared for encerrado e
-aberto novamente, poderá ser criada outra URL.
+"node" ou "npm" não é reconhecido
+  Instale o Node.js 22.13 ou superior e reabra o CMD.
 
-Quando isso acontecer:
+Dependências ausentes
+  Execute npm install na raiz do projeto.
 
-1. copie a nova URL;
-2. abra .env.local;
-3. substitua a URL antiga;
-4. encerre o Expo com Ctrl+C;
-5. execute npm run start:tunnel novamente;
-6. leia o novo QR Code.
+Túnel bloqueado
+  Use npm run dev e conecte celular e computador ao mesmo hotspot.
 
-Não é necessário alterar código-fonte nem editar IP em vários arquivos.
+QR Code abre, mas o app não carrega
+  Aguarde a mensagem LEARNHUB PRONTO. Se necessário, encerre com
+  Ctrl+C, execute npm start novamente e leia o novo QR Code.
 
-
-============================================================
-14. TESTAR CADASTRO
-============================================================
-
-No Expo Go:
-
-1. abra Cadastre-se;
-2. preencha nome e e-mail;
-3. informe e confirme uma senha com pelo menos 8 caracteres;
-4. escolha Colaborador ou Diretor;
-5. toque em Cadastrar.
-
-Fluxo:
-
-Expo Go
-  -> Cloudflare Tunnel
-  -> API Express
-  -> validação
-  -> bcrypt gera o hash
-  -> MySQL salva o usuário
+API ou banco indisponível
+  Execute npm run diagnose. Não é necessário instalar MySQL na máquina
+  escolar, pois o serviço normal usa a infraestrutura hospedada.
 
 
 ============================================================
-15. PROVAR QUE O USUÁRIO FOI SALVO
+10. CHECKLIST PARA A APRESENTAÇÃO
 ============================================================
 
-Execute no MySQL Workbench ou terminal:
-
-USE learnhub;
-
-SELECT
-  id,
-  nome,
-  email,
-  tipo_usuario,
-  created_at,
-  CHAR_LENGTH(senha) AS tamanho_do_hash,
-  LEFT(senha, 7) AS inicio_do_hash
-FROM usuarios
-ORDER BY id DESC;
-
-O usuário deve aparecer e a senha deve começar de forma semelhante a:
-
-$2b$10$
-
-Isso comprova que a senha não foi salva em texto puro.
-
-
-============================================================
-16. TESTAR LOGIN
-============================================================
-
-1. volte para a tela de login;
-2. informe o e-mail cadastrado;
-3. informe a senha correta;
-4. toque em Acessar Plataforma.
-
-Fluxo:
-
-Expo Go
-  -> API Express
-  -> busca usuário no MySQL
-  -> bcrypt compara a senha
-  -> API retorna token JWT
-  -> aplicativo redireciona para Principal
-
-Teste também uma senha errada. A resposta deverá ser:
-
-E-mail ou senha incorretos.
-
-
-============================================================
-17. BÔNUS: MYSQL DA ESCOLA JÁ INSTALADO, MAS SENHA DESCONHECIDA
-============================================================
-
-O projeto não consegue descobrir automaticamente a senha do MySQL.
-Não tente contornar a segurança ou redefinir a senha sem autorização.
-
-PRIMEIRO TESTE: ROOT SEM SENHA
-
-Algumas instalações de XAMPP/MariaDB utilizam root sem senha:
-
-mysql -u root
-
-Se entrar sem pedir senha, configure:
-
-DB_USER=root
-DB_PASSWORD=
-
-E importe:
-
-mysql -u root < database\database.sql
-
-
-SEGUNDO TESTE: MYSQL WORKBENCH COM SENHA SALVA
-
-Abra o MySQL Workbench. Pode existir uma conexão já configurada e com a
-senha salva no Windows.
-
-Se o Workbench conectar:
-
-1. execute database\database.sql;
-2. peça ao professor ou administrador para criar um usuário exclusivo
-   para o aplicativo.
-
-O administrador pode executar:
-
-CREATE USER IF NOT EXISTS 'learnhub_app'@'localhost'
-IDENTIFIED BY 'LearnHub@Escola2026';
-
-GRANT SELECT, INSERT, UPDATE, DELETE
-ON learnhub.*
-TO 'learnhub_app'@'localhost';
-
-FLUSH PRIVILEGES;
-
-Depois configure backend\.env:
-
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=learnhub_app
-DB_PASSWORD="LearnHub@Escola2026"
-DB_NAME=learnhub
-
-Esse procedimento é mais seguro do que usar a conta root.
-
-
-SE NÃO HOUVER SENHA NEM CONEXÃO SALVA
-
-Será necessário pedir ao professor ou administrador uma destas opções:
-
-- fornecer uma conta temporária do MySQL;
-- importar database\database.sql;
-- criar o usuário learnhub_app;
-- autorizar outra instância de MySQL/MariaDB.
-
-Mensagem sugerida ao responsável:
-
-"Preciso importar um banco chamado learnhub e conectar uma API Node.js
-local. Pode criar um usuário MySQL chamado learnhub_app com permissão no
-banco learnhub ou fornecer uma conta temporária?"
-
-Sem uma conta válida não é possível acessar aquele servidor MySQL,
-mesmo que ele já esteja instalado.
-
-
-============================================================
-18. ERROS MAIS COMUNS
-============================================================
-
-ER_ACCESS_DENIED_ERROR
-
-Causa: usuário ou senha incorretos.
-
-Confira DB_USER e DB_PASSWORD em backend\.env e teste:
-
-mysql -u root -p
-
-
-ER_BAD_DB_ERROR
-
-Causa: banco learnhub não existe.
-
-Execute:
-
-mysql -u root -p < database\database.sql
-
-
-ECONNREFUSED NA PORTA 3306
-
-Causa: serviço MySQL parado.
-
-Execute, usando o nome correto do serviço:
-
-net start MySQL80
-
-
-CLOUDFLARE RETORNA 502 BAD GATEWAY
-
-Causa: backend não está respondendo em localhost:3000.
-
-Teste:
-
-http://localhost:3000/api/health
-
-Depois reinicie:
-
-npm run backend
-
-
-EXPO ABRE, MAS CADASTRO NÃO CONECTA
-
-Confira:
-
-1. a URL pública ainda está ativa?
-2. o health público abre no celular?
-3. .env.local contém a URL atual?
-4. o Expo foi reiniciado depois da alteração?
-5. backend e cloudflared continuam abertos?
-
-
-NETWORK REQUEST FAILED
-
-Teste primeiro no celular:
-
-https://URL-ATUAL.trycloudflare.com/api/health
-
-Se não abrir, o problema está no backend ou no túnel, não nas telas do
-aplicativo.
-
-
-============================================================
-19. ENCERRAR A APRESENTAÇÃO
-============================================================
-
-Pressione Ctrl+C nos três CMDs:
-
-- Expo;
-- backend;
-- Cloudflare Tunnel.
-
-O MySQL pode continuar funcionando como serviço do Windows.
-
-O Quick Tunnel é temporário e deve ser usado apenas para demonstração e
-testes.
-
-
-============================================================
-20. CHECKLIST FINAL
-============================================================
-
-[ ] Node.js instalado
+[ ] Node.js 22.13 ou superior instalado
 [ ] npm install executado
-[ ] MySQL Server iniciado
-[ ] Conta MySQL disponível
-[ ] backend\.env configurado
-[ ] Banco learnhub criado
-[ ] Tabela usuarios criada
-[ ] npm run backend funcionando
-[ ] Health local retorna connected
-[ ] cloudflared.exe iniciado
-[ ] URL pública criada
-[ ] Health público funciona no celular
-[ ] .env.local contém a URL pública atual
-[ ] npm run start:tunnel iniciado
+[ ] npm run diagnose confirma API e banco conectados
+[ ] npm start mostra LEARNHUB PRONTO
 [ ] QR Code aberto no Expo Go
-[ ] Cadastro realizado
-[ ] Usuário apareceu no MySQL
-[ ] Senha apareceu como hash bcrypt
-[ ] Login realizado
-[ ] Redirecionamento para Principal confirmado
+[ ] Cadastro testado
+[ ] Login testado
+[ ] Consulta testada
+[ ] Edição testada
+[ ] Exclusão testada
 
 
 ============================================================
-ROTEIRO RÁPIDO PARA O DIA DA APRESENTAÇÃO
+ROTEIRO RÁPIDO
 ============================================================
 
-1. Iniciar o MySQL.
-2. Abrir o CMD 1 e executar npm run backend.
-3. Testar http://localhost:3000/api/health.
-4. Abrir o CMD 2 e iniciar cloudflared.exe.
-5. Copiar a nova URL pública.
-6. Testar URL-PÚBLICA/api/health pelo celular.
-7. Atualizar .env.local.
-8. Abrir o CMD 3 e executar npm run start:tunnel.
-9. Ler o QR Code no Expo Go.
-10. Fazer cadastro.
-11. Mostrar o usuário no MySQL.
-12. Fazer login.
-13. Mostrar o redirecionamento para Principal.
+1. Abrir o CMD na pasta LearnHub.
+2. Executar npm install, caso seja a primeira vez.
+3. Executar npm start.
+4. Esperar LEARNHUB PRONTO.
+5. Ler o QR Code com o Expo Go.
+6. Demonstrar o CRUD.
+7. Pressionar Ctrl+C uma vez ao terminar.
 
 ============================================================
 FIM DO GUIA
