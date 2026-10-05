@@ -18,7 +18,7 @@ Expo Go → API Express hospedada → MySQL hospedado
 
 ## Pré-requisitos
 
-- Node.js 20.19 ou superior (requisito mínimo do Expo SDK 54)
+- Node.js 22.13 ou superior (requisito mínimo do Expo SDK 57)
 - npm
 - Expo Go atualizado no celular
 - Internet disponível para acessar a API e o banco hospedados
@@ -27,7 +27,7 @@ O MySQL local é opcional e serve apenas para desenvolvimento avançado. Na máq
 
 ## Início rápido em outra máquina
 
-1. Instale o Node.js 20.19 ou mais recente.
+1. Instale o Node.js 22.13 ou mais recente.
 2. Copie ou clone a pasta completa do projeto.
 3. Dê dois cliques em `INICIAR_LEARNHUB.cmd`.
 
@@ -186,7 +186,7 @@ npm run app
 3. Abra o Expo Go no celular.
 4. Leia o QR Code exibido no terminal.
 
-Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.hostUri`, fornecido pelo Metro no Expo SDK 54, e usa esse mesmo computador na porta `3000`.
+Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.hostUri`, fornecido pelo Metro no Expo SDK 57, e usa esse mesmo computador na porta `3000`.
 
 A ordem de resolução é:
 
@@ -382,7 +382,7 @@ O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hosp
 
 ## Checklist antes de apresentar
 
-- [ ] Node.js 20.19 ou superior instalado
+- [ ] Node.js 22.13 ou superior instalado
 - [ ] `npm install` executado
 - [ ] `npm run diagnose` confirma API e banco conectados
 - [ ] `/api/health` funcionando

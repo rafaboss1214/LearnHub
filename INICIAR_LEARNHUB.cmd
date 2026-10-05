@@ -6,7 +6,7 @@ title LearnHub
 where node >nul 2>nul
 if errorlevel 1 (
   echo ERRO: Node.js nao foi encontrado.
-  echo Instale o Node.js 20.19 ou mais recente em https://nodejs.org/
+  echo Instale o Node.js 22.13 ou mais recente em https://nodejs.org/
   pause
   exit /b 1
 )

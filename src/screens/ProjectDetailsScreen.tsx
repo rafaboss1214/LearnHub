@@ -48,7 +48,8 @@ export default function ProjectDetailsScreen({ route, navigation }: any) {
   }, [idFinal]);
 
   useEffect(() => {
-    void carregar();
+    const timer = setTimeout(() => { void carregar(); }, 0);
+    return () => clearTimeout(timer);
   }, [carregar]);
 
   async function comentar() {

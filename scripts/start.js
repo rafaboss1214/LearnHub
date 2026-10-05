@@ -29,9 +29,9 @@ function getHostedApiUrl() {
 
 function assertNodeVersion() {
   const [major, minor] = process.versions.node.split(".").map(Number);
-  if (major > 20 || (major === 20 && minor >= 19)) return;
+  if (major > 22 || (major === 22 && minor >= 13)) return;
   throw new Error(
-    `Node.js ${process.versions.node} não é compatível. Instale o Node.js 20.19 ou mais recente e execute npm install novamente.`,
+    `Node.js ${process.versions.node} não é compatível. Instale o Node.js 22.13 ou mais recente e execute npm install novamente.`,
   );
 }
 

@@ -32,7 +32,10 @@ export default function ProfileOverviewScreen({ navigation }: any) {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(() => { void load(); }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   if (loading) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
   const ownProjects = projects.filter((item) => item.criador?.id === user?.id).length;

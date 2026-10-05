@@ -53,7 +53,8 @@ export default function ProfileScreen() {
   }
 
   useEffect(() => {
-    loadProfileData();
+    const timer = setTimeout(() => { void loadProfileData(); }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (carregando) {

@@ -1,33 +1,23 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import HomeScreen from './src/screens/HomeScreen';
-import AboutScreen from './src/screens/AboutScreen';
-import ProjectsScreen from './src/screens/ProjectsScreen';
-import ProjectDetailsScreen from './src/screens/ProjectDetailsScreen';
-import DataScreen from './src/screens/DataScreen';
+import DrawerMenu from "./src/navigation/DrawerMenu";
+import LoginScreen from "./src/screens/LoginModernScreen";
+import RegisterScreen from "./src/screens/RegisterModernScreen";
+import { ThemeProvider } from "./src/theme/ThemeContext";
 
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function TabNavigator() {
+export default function App() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopWidth: 0,
-          height: 65,
-        },
-        tabBarActiveTintColor: '#38BDF8',
-        tabBarInactiveTintColor: '#CBD5E1',
-      }}
-    >
-      <Tab.Screen name="Início" component={HomeScreen} />
-      <Tab.Screen name="Sobre" component={AboutScreen} />
-      <Tab.Screen name="Projetos" component={ProjectsScreen} />
-      <Tab.Screen name="Detalhes" component={ProjectDetailsScreen} />
-      <Tab.Screen name="Dados" component={DataScreen} />
-    </Tab.Navigator>
+    <ThemeProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Cadastro" component={RegisterScreen} />
+          <Stack.Screen name="Principal" component={DrawerMenu} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }

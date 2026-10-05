@@ -47,7 +47,7 @@ async function diagnose() {
     null;
   const expoInstalled = fs.existsSync(path.join(projectRoot, "node_modules", "expo", "bin", "cli"));
   const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
-  const nodeCompatible = nodeMajor > 20 || (nodeMajor === 20 && nodeMinor >= 19);
+  const nodeCompatible = nodeMajor > 22 || (nodeMajor === 22 && nodeMinor >= 13);
   const addresses = getLocalIPv4Addresses();
   const preferredAddress = getPreferredLocalIPv4();
   const port = await checkPort(env.PORT);
@@ -55,7 +55,7 @@ async function diagnose() {
   console.log("====================================");
   console.log("DIAGNÓSTICO LEARNHUB");
   console.log("====================================");
-  console.log(`Node.js: ${process.version} (${nodeCompatible ? "compatível" : "INCOMPATÍVEL; requer 20.19+"})`);
+  console.log(`Node.js: ${process.version} (${nodeCompatible ? "compatível" : "INCOMPATÍVEL; requer 22.13+"})`);
   console.log(`Dependências: ${expoInstalled ? "instaladas" : "NÃO instaladas (execute npm install)"}`);
   console.log(`Modo da API: ${configuredApiUrl ? "hospedada" : "local"}`);
   if (configuredApiUrl) {

@@ -96,8 +96,12 @@ JSON.parse(user)
 useEffect(()=>{
 
 
-carregar();
+const timer = setTimeout(() => {
+void carregar();
+}, 0);
 
+
+return () => clearTimeout(timer);
 
 },[]);
 

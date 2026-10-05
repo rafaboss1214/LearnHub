@@ -40,7 +40,7 @@ publicado diretamente na internet.
 2. PROGRAMAS NECESSÁRIOS
 ============================================================
 
-- Node.js 20.19 ou superior;
+- Node.js 22.13 ou superior;
 - npm;
 - MySQL Server ou MariaDB;
 - Expo Go no celular;

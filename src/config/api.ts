@@ -49,7 +49,7 @@ function resolveApiUrl() {
     return { url: withoutTrailingSlash(hostedUrl), source: "app-config" as const };
   }
 
-  // SDK 54: hostUri contém o host usado pelo Metro no Expo Go em modo LAN.
+  // SDK 57: hostUri contém o host usado pelo Metro no Expo Go em modo LAN.
   const metroHost = extractHost(Constants.expoConfig?.hostUri);
   if (isUsableMetroHost(metroHost)) {
     return { url: `http://${metroHost}:${API_PORT}`, source: "expo-host" as const };
