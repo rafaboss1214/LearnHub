@@ -36,7 +36,7 @@ export default function DashboardOverviewScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: colors.background }]} edges={["top"]}>
+    <SafeAreaView style={[styles.page, { backgroundColor: colors.background }]} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.eyebrow, { color: colors.primary }]}>VISÃO GERAL</Text>
         <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>
@@ -69,13 +69,13 @@ export default function DashboardOverviewScreen() {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   eyebrow: { fontSize: 11, fontWeight: "900", letterSpacing: 1.3 },
   title: { fontSize: 34, fontWeight: "900", letterSpacing: -0.8, marginTop: 4 },
   subtitle: { fontSize: 14, lineHeight: 20, marginTop: 6, marginBottom: 23 },
   loader: { marginTop: 50 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  card: { width: "48%", minHeight: 148, borderWidth: 1, borderRadius: 23, padding: 17 },
+  card: { flexGrow: 1, flexBasis: 140, minHeight: 148, borderWidth: 1, borderRadius: 23, padding: 22 },
   cardIcon: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   number: { fontSize: 31, fontWeight: "900", marginTop: 14 },
   label: { fontSize: 13, fontWeight: "700", marginTop: 2 },

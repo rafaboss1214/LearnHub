@@ -1,12 +1,15 @@
+import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useContext, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { AuthUser, deleteAccount, getCurrentUser, updateProfile } from "../services/auth";
 import { listProjects, Project } from "../services/projects";
 import { ThemeContext } from "../theme/ThemeContext";
 
 export default function ProfileOverviewScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
+  const { showAlert, feedback } = useFeedback();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +35,7 @@ export default function ProfileOverviewScreen({ navigation }: any) {
     }
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 0);
-    return () => clearTimeout(timer);
-  }, [load]);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   if (loading) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
   const ownProjects = projects.filter((item) => item.criador?.id === user?.id).length;
@@ -43,7 +43,7 @@ export default function ProfileOverviewScreen({ navigation }: any) {
 
   async function saveProfile() {
     if (!name.trim() || !email.trim()) {
-      Alert.alert("Campos obrigatórios", "Informe nome e e-mail.");
+      showAlert("Campos obrigatórios", "Informe nome e e-mail.");
       return;
     }
     setSaving(true);
@@ -52,14 +52,14 @@ export default function ProfileOverviewScreen({ navigation }: any) {
       setUser(updated);
       setEditing(false);
     } catch (caught) {
-      Alert.alert("Não foi possível atualizar", caught instanceof Error ? caught.message : "Tente novamente.");
+      showAlert("Não foi possível atualizar", caught instanceof Error ? caught.message : "Tente novamente.");
     } finally {
       setSaving(false);
     }
   }
 
   function confirmAccountDeletion() {
-    Alert.alert("Excluir conta", "Sua conta será removida. Projetos publicados continuarão disponíveis para a comunidade. Deseja continuar?", [
+    showAlert("Excluir conta", "Sua conta será removida. Projetos publicados continuarão disponíveis para a comunidade. Deseja continuar?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Excluir conta",
@@ -67,9 +67,9 @@ export default function ProfileOverviewScreen({ navigation }: any) {
         onPress: async () => {
           try {
             await deleteAccount();
-            navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+            navigation.getParent()?.reset({ index: 0, routes: [{ name: "Login" }] });
           } catch (caught) {
-            Alert.alert("Não foi possível excluir", caught instanceof Error ? caught.message : "Tente novamente.");
+            showAlert("Não foi possível excluir", caught instanceof Error ? caught.message : "Tente novamente.");
           }
         },
       },
@@ -78,10 +78,11 @@ export default function ProfileOverviewScreen({ navigation }: any) {
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      {feedback}
       <View style={[styles.profileCard, { backgroundColor: colors.primary }]}> 
         <View style={styles.avatar}><Text style={[styles.avatarText, { color: colors.primary }]}>{user?.nome?.charAt(0).toUpperCase() || "L"}</Text></View>
         <Text style={styles.name}>{user?.nome || "Usuário LearnHub"}</Text>
-        <Text style={styles.role}>{user?.tipo === "diretor" ? "Diretor" : "Colaborador"}</Text>
+        <Text style={styles.role}>{user?.tipo === "admin" ? "Administrador" : user?.tipo === "diretor" ? "Diretor" : "Colaborador"}</Text>
       </View>
       <View style={styles.stats}>
         <View style={[styles.stat, { backgroundColor: colors.card, borderColor: colors.border }]}><Text style={[styles.statNumber, { color: colors.text }]}>{ownProjects}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>Projetos criados</Text></View>
@@ -115,7 +116,7 @@ export default function ProfileOverviewScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  content: { padding: 20, paddingBottom: 42 },
+  content: { padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   profileCard: { borderRadius: 28, alignItems: "center", padding: 28 },
   avatar: { width: 82, height: 82, borderRadius: 25, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },

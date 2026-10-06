@@ -31,7 +31,7 @@ O MySQL local é opcional e serve apenas para desenvolvimento avançado. Na máq
 2. Copie ou clone a pasta completa do projeto.
 3. Dê dois cliques em `INICIAR_LEARNHUB.cmd`.
 
-O iniciador instala as dependências quando necessário, testa a API hospedada e tenta abrir um túnel para o Expo. Se a rede bloquear o túnel, ele muda automaticamente para LAN; nesse caso, conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
+O iniciador instala as dependências quando necessário, testa a API hospedada e abre o túnel oficial do Expo. Se a rede bloquear o túnel, execute `npm run dev` e conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
 
 Também é possível usar o terminal:
 
@@ -151,7 +151,7 @@ Para usar a API e o banco hospedados, use o iniciador completo:
 npm start
 ```
 
-O iniciador consulta `/api/health`, confirma a conexão do banco, abre o túnel do Expo e valida o manifesto. Se o túnel estiver bloqueado, ele continua automaticamente em LAN. Para iniciar diretamente em LAN, use `npm run dev`.
+O iniciador consulta `/api/health`, confirma a conexão do banco, abre o túnel oficial do Expo e valida o manifesto pelo endereço público. Para iniciar diretamente em LAN, use `npm run dev`.
 
 Se quiser desenvolver com banco local, use:
 
@@ -265,7 +265,15 @@ ORDER BY id DESC;
 
 O registro recém-criado deve aparecer. A coluna `senha` terá um hash bcrypt, normalmente iniciado por `$2b$`, e nunca a senha digitada.
 
-## Testes automatizados
+## Administração
+
+O administrador entra pela mesma tela de login e recebe a aba **Admin**, com totais de usuários, diretores, projetos, apoios, favoritos, comentários e distribuição por categoria. Pode consultar e excluir qualquer projeto após confirmação. Diretores podem editar e excluir somente os próprios projetos. O cadastro público não permite criar administradores.
+
+Para provisionar uma conta, configure a conexão real em `backend/.env` e as variáveis `ADMIN_EMAIL`, `ADMIN_NAME` e `ADMIN_PASSWORD` em `backend/.env.admin.local` (ou no ambiente do servidor). Execute `npm run admin:create`. O comando cria a conta com hash bcrypt e não modifica uma conta existente. Ambos os arquivos de configuração local são ignorados pelo Git.
+
+Neste computador, `.env.local` contém `LEARNHUB_LOCAL_API=true`: `npm start` inicia o backend atualizado conectado ao MySQL da Aiven, publica a API por Cloudflare e abre o túnel oficial do Expo. O computador e o processo precisam continuar ligados. Para usar a API permanente do Render, publique as alterações do backend lá e remova essa variável local.
+
+## Validação automatizada
 
 Testes locais de validação, descoberta de rede e fluxo HTTP completo com repositório isolado, sem exigir MySQL:
 
@@ -362,9 +370,9 @@ npm run start:tunnel
 npm run dev:tunnel
 ```
 
-Esses comandos usam o Cloudflare Quick Tunnel para publicar o Metro. O executável é procurado em `tools/cloudflared.exe` no Windows, em `tools/cloudflared` nos outros sistemas ou no caminho definido por `CLOUDFLARED_PATH`. Se ele não existir, o iniciador baixa uma versão oficial fixada para a pasta local `tools`. Se o download ou o túnel for bloqueado pela rede escolar, o app continua automaticamente em LAN.
+Esses comandos usam `expo start --tunnel --go`, com `@expo/ngrok` instalado nas dependências do projeto, para publicar o Metro. Leia o novo QR Code a cada reinício: o endereço pode mudar. Se o túnel for bloqueado pela rede, use `npm run dev` no mesmo Wi-Fi ou hotspot.
 
-O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hospedado já está no `app.json`. No modo opcional `dev:local`, o script também publica a porta `3000` por um segundo túnel quando necessário.
+O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hospedado já está no `app.json`. Ao combinar `--tunnel --local-api`, o script publica a porta `3000` por um túnel Cloudflare separado, baixado para `tools` quando necessário.
 
 ## Rotas da API
 

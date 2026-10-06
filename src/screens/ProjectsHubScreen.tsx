@@ -83,10 +83,10 @@ export default function ProjectsHubScreen({ navigation }: any) {
     );
   }
 
-  const director = user?.tipo === "diretor";
+  const director = user?.tipo === "diretor" || user?.tipo === "admin";
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
       <FlatList
         data={filteredProjects}
         keyExtractor={(item) => String(item.id)}
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { fontSize: 14 },
-  list: { padding: 20, paddingBottom: 36 },
+  list: { padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   headingCopy: { flex: 1, paddingRight: 16 },
   eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, marginBottom: 4 },
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
   addButton: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", elevation: 3 },
   searchBox: { height: 54, borderRadius: 17, borderWidth: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, marginBottom: 14 },
   searchInput: { flex: 1, fontSize: 15, marginLeft: 10 },
-  filters: { flexDirection: "row", gap: 8, marginBottom: 22 },
-  filter: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9 },
+  filters: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
+  filter: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12 },
   filterText: { fontSize: 12, fontWeight: "700" },
   errorBox: { borderWidth: 1, borderRadius: 16, padding: 13, flexDirection: "row", gap: 9, marginBottom: 18 },
   errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   creatorRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
   creator: { flex: 1, fontSize: 12, fontWeight: "600" },
   actions: { flexDirection: "row", gap: 12 },
-  iconAction: { flexDirection: "row", alignItems: "center", gap: 4, padding: 4 },
+  iconAction: { minHeight: 44, minWidth: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, padding: 8 },
   count: { fontSize: 12, fontWeight: "700" },
   empty: { borderWidth: 1, borderRadius: 24, alignItems: "center", padding: 34, marginTop: 10 },
   emptyTitle: { fontSize: 18, fontWeight: "800", marginTop: 12 },

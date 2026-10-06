@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useContext, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthUser, getCurrentUser } from "../services/auth";
 import { listProjects, Project } from "../services/projects";
@@ -33,10 +33,10 @@ export default function HomeOverviewScreen({ navigation }: any) {
   const completed = projects.filter((item) => item.status === "concluido").length;
 
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: colors.background }]} edges={["top"]}>
-      <View style={styles.content}>
+    <SafeAreaView style={[styles.page, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+      <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1, paddingRight: 16 }}>
             <Text style={[styles.greeting, { color: colors.muted }]}>Olá, {user?.nome?.split(" ")[0] || "visitante"}</Text>
             <Text style={[styles.title, { color: colors.text }]}>Vamos transformar ideias?</Text>
           </View>
@@ -76,14 +76,14 @@ export default function HomeOverviewScreen({ navigation }: any) {
           </View>
         )}
         {!!error && <Text style={[styles.error, { color: colors.danger }]} onPress={() => void load()}>{error} Toque para tentar novamente.</Text>}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  content: { flex: 1, padding: 20 },
+  content: { flexGrow: 1, padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
   greeting: { fontSize: 14, fontWeight: "600" },
   title: { fontSize: 25, fontWeight: "900", letterSpacing: -0.5, marginTop: 3 },
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
   heroButton: { alignSelf: "flex-start", marginTop: 20, backgroundColor: "#FFFFFF", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", gap: 7, alignItems: "center" },
   heroButtonText: { fontSize: 12, fontWeight: "800" },
   sectionTitle: { fontSize: 18, fontWeight: "800", marginTop: 28, marginBottom: 14 },
-  stats: { flexDirection: "row", gap: 9 },
-  stat: { flex: 1, minHeight: 135, borderWidth: 1, borderRadius: 20, padding: 13 },
+  stats: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  stat: { flexGrow: 1, flexBasis: 100, minHeight: 145, borderWidth: 1, borderRadius: 20, padding: 18 },
   statIcon: { width: 39, height: 39, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   statNumber: { fontSize: 25, fontWeight: "900", marginTop: 12 },
   statLabel: { fontSize: 11, lineHeight: 15, fontWeight: "600", marginTop: 2 },

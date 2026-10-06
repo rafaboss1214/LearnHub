@@ -1,11 +1,15 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { register } from "../services/auth";
 import { ThemeContext } from "../theme/ThemeContext";
 
 export default function RegisterModernScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
+  const { showAlert, feedback } = useFeedback();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,15 +19,15 @@ export default function RegisterModernScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    if (!name.trim() || !email.trim() || !password || !confirmation) return Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
-    if (password !== confirmation) return Alert.alert("Senhas diferentes", "A confirmação precisa ser igual à senha.");
-    if (password.length < 8) return Alert.alert("Senha muito curta", "Use pelo menos 8 caracteres.");
+    if (!name.trim() || !email.trim() || !password || !confirmation) return showAlert("Campos obrigatórios", "Preencha todos os campos.");
+    if (password !== confirmation) return showAlert("Senhas diferentes", "A confirmação precisa ser igual à senha.");
+    if (password.length < 8) return showAlert("Senha muito curta", "Use pelo menos 8 caracteres.");
     setSubmitting(true);
     try {
       await register({ nome: name.trim(), email: email.trim(), senha: password, tipo: type });
-      Alert.alert("Conta criada", "Agora você já pode entrar no LearnHub.", [{ text: "Entrar", onPress: () => navigation.replace("Login") }]);
+      showAlert("Conta criada", "Agora você já pode entrar no LearnHub.", [{ text: "Entrar", onPress: () => navigation.replace("Login") }]);
     } catch (caught) {
-      Alert.alert("Não foi possível cadastrar", caught instanceof Error ? caught.message : "Tente novamente.");
+      showAlert("Não foi possível cadastrar", caught instanceof Error ? caught.message : "Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -31,7 +35,8 @@ export default function RegisterModernScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView style={[styles.flex, { backgroundColor: colors.background }]} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={[styles.flex, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 24, 48), paddingBottom: Math.max(insets.bottom + 24, 48) }]} keyboardShouldPersistTaps="handled">
+        {feedback}
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.back, { backgroundColor: colors.card }]}><Ionicons name="arrow-back" size={21} color={colors.text} /></TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Crie sua conta</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>Faça parte da rede que transforma boas ideias em impacto.</Text>
@@ -63,13 +68,13 @@ function Field({ icon, colors, trailing, ...props }: any) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, padding: 22, paddingVertical: 36 },
+  content: { flexGrow: 1, padding: 24, paddingVertical: 48, width: "100%", maxWidth: 600, alignSelf: "center" },
   back: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center", marginBottom: 24 },
   title: { fontSize: 31, fontWeight: "900", letterSpacing: -0.7 },
   subtitle: { fontSize: 14, lineHeight: 20, marginTop: 6, marginBottom: 24 },
   card: { borderWidth: 1, borderRadius: 26, padding: 20 },
   inputBox: { minHeight: 55, borderWidth: 1, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, marginBottom: 14 },
-  input: { flex: 1, height: "100%", fontSize: 14 },
+  input: { flex: 1, minHeight: 54, paddingVertical: 14, fontSize: 14 },
   label: { fontSize: 13, fontWeight: "800", marginTop: 4, marginBottom: 10 },
   types: { flexDirection: "row", gap: 9, marginBottom: 22 },
   type: { flex: 1, minHeight: 56, borderWidth: 1, borderRadius: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },

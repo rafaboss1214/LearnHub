@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nome VARCHAR(150) NOT NULL,
   email VARCHAR(255) NOT NULL,
   senha VARCHAR(255) NOT NULL,
-  tipo_usuario ENUM('colaborador', 'diretor') NOT NULL DEFAULT 'colaborador',
+  tipo_usuario ENUM('colaborador', 'diretor', 'admin') NOT NULL DEFAULT 'colaborador',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_usuarios_email (email)

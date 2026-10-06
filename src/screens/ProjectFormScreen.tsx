@@ -1,8 +1,8 @@
+import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,6 +25,7 @@ const categories = [
 
 export default function ProjectFormScreen({ navigation, route }: any) {
   const { colors } = useContext(ThemeContext);
+  const { showAlert, feedback } = useFeedback();
   const projectId = route.params?.projectId ? Number(route.params.projectId) : null;
   const editing = Boolean(projectId);
   const [title, setTitle] = useState("");
@@ -34,6 +35,8 @@ export default function ProjectFormScreen({ navigation, route }: any) {
   const [status, setStatus] = useState<ProjectStatus>("publicado");
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     if (!projectId) return;
@@ -45,13 +48,13 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         setImageUrl(project.imagemUrl);
         setStatus(project.status);
       })
-      .catch((error) => Alert.alert("Erro", error.message))
+      .catch((error) => setLoadError(error.message))
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, retry]);
 
   async function submit() {
     if (title.trim().length < 3 || description.trim().length < 10 || !category) {
-      Alert.alert("Revise os campos", "Informe título, categoria e uma descrição com pelo menos 10 caracteres.");
+      showAlert("Revise os campos", "Informe título, categoria e uma descrição com pelo menos 10 caracteres.");
       return;
     }
 
@@ -66,11 +69,11 @@ export default function ProjectFormScreen({ navigation, route }: any) {
       };
       if (projectId) await updateProject(projectId, payload);
       else await createProject(payload);
-      Alert.alert("Tudo certo", editing ? "Projeto atualizado com sucesso." : "Projeto publicado com sucesso.", [
+      showAlert("Tudo certo", editing ? "Projeto atualizado com sucesso." : "Projeto publicado com sucesso.", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (caught) {
-      Alert.alert("Não foi possível salvar", caught instanceof Error ? caught.message : "Tente novamente.");
+      showAlert("Não foi possível salvar", caught instanceof Error ? caught.message : "Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -79,6 +82,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
   if (loading) {
     return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
+  if (loadError) return <View style={[styles.center, { backgroundColor: colors.background, padding: 24 }]}><Text style={{ color: colors.danger, textAlign: "center", marginBottom: 20 }}>{loadError}</Text><TouchableOpacity style={[styles.submit, { backgroundColor: colors.primary, paddingHorizontal: 24 }]} onPress={() => { setLoading(true); setLoadError(""); setRetry(value => value + 1); }}><Text style={styles.submitText}>Tentar novamente</Text></TouchableOpacity></View>;
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -87,6 +91,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        {feedback}
         <View style={[styles.intro, { backgroundColor: colors.primarySoft }]}>
           <View style={[styles.introIcon, { backgroundColor: colors.primary }]}>
             <Ionicons name={editing ? "create-outline" : "sparkles-outline"} size={23} color="#FFFFFF" />
@@ -181,7 +186,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  content: { padding: 20, paddingBottom: 44 },
+  content: { padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   intro: { borderRadius: 24, padding: 18, flexDirection: "row", alignItems: "flex-start", marginBottom: 26 },
   introIcon: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   introCopy: { flex: 1, marginLeft: 14 },

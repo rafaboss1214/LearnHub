@@ -1,8 +1,9 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { clearSession } from "../services/auth";
+import Feedback, { FeedbackState } from "../components/Feedback";
 
 import TabNavigator from "./TabNavigator";
 import ProfileScreen from "../screens/ProfileOverviewScreen";
@@ -26,34 +27,29 @@ function SettingsScreen() {
 // Componente customizado para renderizar o interior do Drawer com o botão Sair
 function CustomDrawerContent(props: any) {
   const { colors } = useContext(ThemeContext);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
   async function fazerLogout() {
-    Alert.alert("Sair", "Deseja realmente sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Sair",
-        style: "destructive",
-        onPress: async () => {
+    setFeedback({ title: "Sair da conta?", message: "Você poderá entrar novamente quando quiser.", confirm: () => { void (async () => {
           try {
             // Limpa os dados de login salvos
             await clearSession();
             
             // Como o DrawerMenu está aninhado no Stack principal (Index), 
             // podemos resetar para a tela de Login que está no topo do Stack
-            props.navigation.reset({
+            props.navigation.getParent()?.reset({
               index: 0,
               routes: [{ name: "Login" }],
             });
           } catch (error) {
             console.error("Erro ao deslogar:", error);
           }
-        },
-      },
-    ]);
+        })(); } });
   }
 
   return (
     <View style={{ flex: 1 }}>
+      <Feedback value={feedback} onClose={() => setFeedback(null)} />
       {/* Lista padrão das telas do Drawer */}
       <DrawerContentScrollView {...props}>
         <DrawerItemList {...props} />
@@ -88,6 +84,7 @@ export default function DrawerMenu() {
         name="Inicio"
         component={TabNavigator}
         options={{
+          title: "LearnHub",
           drawerIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
         }}
       />

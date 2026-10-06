@@ -6,7 +6,7 @@ const statements = [
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(255) NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    tipo_usuario ENUM('colaborador', 'diretor') NOT NULL DEFAULT 'colaborador',
+    tipo_usuario ENUM('colaborador', 'diretor', 'admin') NOT NULL DEFAULT 'colaborador',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_usuarios_email (email)
@@ -65,6 +65,10 @@ const statements = [
 async function ensureDatabaseSchema() {
   for (const statement of statements) {
     await pool.query(statement);
+  }
+  const [columns] = await pool.query("SHOW COLUMNS FROM usuarios LIKE 'tipo_usuario'");
+  if (!columns[0].Type.includes("'admin'")) {
+    await pool.query("ALTER TABLE usuarios MODIFY tipo_usuario ENUM('colaborador', 'diretor', 'admin') NOT NULL DEFAULT 'colaborador'");
   }
 }
 

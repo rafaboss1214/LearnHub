@@ -4,6 +4,7 @@ const env = require("./config/env");
 const authRoutes = require("./routes/auth-routes");
 const healthRoutes = require("./routes/health-routes");
 const projectRoutes = require("./routes/project-routes");
+const adminRoutes = require("./routes/admin-routes");
 const { notFound, errorHandler } = require("./middleware/error-handler");
 
 function corsOptions() {
@@ -21,6 +22,7 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/admin", adminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

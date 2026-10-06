@@ -1,9 +1,9 @@
+import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useContext, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -27,6 +27,7 @@ import { ThemeContext } from "../theme/ThemeContext";
 
 export default function ProjectViewScreen({ navigation, route }: any) {
   const { colors } = useContext(ThemeContext);
+  const { showAlert, feedback } = useFeedback();
   const projectId = Number(route.params?.projectId);
   const [project, setProject] = useState<Project | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -56,7 +57,7 @@ export default function ProjectViewScreen({ navigation, route }: any) {
       await action();
       await load();
     } catch (caught) {
-      Alert.alert("Não foi possível concluir", caught instanceof Error ? caught.message : "Tente novamente.");
+      showAlert("Não foi possível concluir", caught instanceof Error ? caught.message : "Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -72,21 +73,23 @@ export default function ProjectViewScreen({ navigation, route }: any) {
   }
 
   function confirmDelete() {
-    Alert.alert("Excluir projeto", "Essa ação remove o projeto, comentários, favoritos e apoios. Deseja continuar?", [
+    showAlert("Excluir projeto", "Essa ação remove o projeto, comentários, favoritos e apoios. Deseja continuar?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Excluir",
         style: "destructive",
-        onPress: () => void run(async () => {
-          await deleteProject(projectId);
-          navigation.goBack();
-        }),
+        onPress: () => { void (async () => {
+          setSaving(true);
+          try { await deleteProject(projectId); navigation.goBack(); }
+          catch (caught) { showAlert("Falha ao excluir", caught instanceof Error ? caught.message : "Tente novamente."); }
+          finally { setSaving(false); }
+        })(); },
       },
     ]);
   }
 
   function confirmCommentDelete(commentId: number) {
-    Alert.alert("Excluir comentário", "Deseja remover este comentário?", [
+    showAlert("Excluir comentário", "Deseja remover este comentário?", [
       { text: "Cancelar", style: "cancel" },
       { text: "Excluir", style: "destructive", onPress: () => void run(() => deleteComment(commentId)) },
     ]);
@@ -108,10 +111,12 @@ export default function ProjectViewScreen({ navigation, route }: any) {
     );
   }
 
-  const director = user?.tipo === "diretor";
+  const director = user?.tipo === "diretor" || user?.tipo === "admin";
+  const canManage = user?.tipo === "admin" || (user?.tipo === "diretor" && Number(project.criador?.id) === Number(user.id));
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      {feedback}
       {project.imagemUrl ? (
         <Image source={{ uri: project.imagemUrl }} style={styles.cover} />
       ) : (
@@ -152,7 +157,7 @@ export default function ProjectViewScreen({ navigation, route }: any) {
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Sobre o projeto</Text>
       <Text style={[styles.description, { color: colors.muted }]}>{project.descricao}</Text>
 
-      {director && (
+      {canManage && (
         <View style={styles.manageRow}>
           <TouchableOpacity onPress={() => navigation.navigate("FormularioProjeto", { projectId: project.id })} style={[styles.manageButton, { backgroundColor: colors.primarySoft }]}>
             <Ionicons name="create-outline" size={19} color={colors.primary} />
@@ -211,24 +216,24 @@ export default function ProjectViewScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  content: { padding: 20, paddingBottom: 48 },
+  content: { padding: 24, paddingBottom: 48, width: "100%", maxWidth: 900, alignSelf: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   cover: { width: "100%", height: 220, borderRadius: 25 },
   coverPlaceholder: { width: "100%", height: 150, borderRadius: 25, alignItems: "center", justifyContent: "center" },
-  categoryRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22 },
+  categoryRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginTop: 22 },
   category: { flex: 1, fontSize: 12, fontWeight: "800", letterSpacing: 0.7 },
   status: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   statusText: { fontSize: 11, fontWeight: "800" },
   title: { fontSize: 30, lineHeight: 36, fontWeight: "900", letterSpacing: -0.5, marginTop: 12 },
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
+  authorRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 12 },
   author: { fontSize: 12, fontWeight: "600" },
   dot: { fontSize: 12 },
-  actionBar: { borderWidth: 1, borderRadius: 19, padding: 13, marginTop: 22, flexDirection: "row", gap: 18 },
+  actionBar: { flexWrap: "wrap", borderWidth: 1, borderRadius: 19, padding: 13, marginTop: 22, flexDirection: "row", gap: 18 },
   actionItem: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 3 },
   actionText: { fontSize: 12, fontWeight: "700" },
   sectionTitle: { fontSize: 19, fontWeight: "800", marginTop: 28, marginBottom: 10 },
   description: { fontSize: 15, lineHeight: 24 },
-  manageRow: { flexDirection: "row", gap: 9, marginTop: 24 },
+  manageRow: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 24 },
   manageButton: { flex: 1, minHeight: 48, borderRadius: 15, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
   manageText: { fontSize: 13, fontWeight: "800" },
   deleteButton: { width: 48, height: 48, borderRadius: 15, borderWidth: 1, alignItems: "center", justifyContent: "center" },

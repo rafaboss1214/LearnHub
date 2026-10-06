@@ -3,7 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AdminScreen from "../screens/AdminScreen";
 
 import HomeScreen from "../screens/HomeOverviewScreen";
 import ProjectsScreen from "../screens/ProjectsHubScreen";
@@ -50,6 +51,7 @@ function ProjectsNavigator() {
 
 export default function TabNavigator() {
   const { colors } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
   const [userType, setUserType] = useState<string>("");
 
   useEffect(() => {
@@ -76,10 +78,10 @@ export default function TabNavigator() {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           // Ajusta a altura ideal dependendo se é iOS (que tem a barra de baixo) ou Android
-          height: Platform.OS === "ios" ? 85 : 68,
+          height: 64 + Math.max(insets.bottom, 12),
           // Controla o espaçamento interno para os ícones e textos não colarem embaixo
           paddingTop: 10,
-          paddingBottom: Platform.OS === "ios" ? 25 : 12,
+          paddingBottom: Math.max(insets.bottom, 12),
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -91,7 +93,7 @@ export default function TabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Inicio"
+        name="Resumo"
         component={HomeScreen}
         options={{
           tabBarLabel: "Início",
@@ -125,6 +127,7 @@ export default function TabNavigator() {
           }}
         />
       )}
+      {userType === "admin" && <Tab.Screen name="Administracao" component={AdminScreen} options={{ tabBarLabel: "Admin", tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" size={size} color={color} /> }} />}
     </Tab.Navigator>
   );
 }

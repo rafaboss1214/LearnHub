@@ -1,8 +1,9 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +19,8 @@ import { ThemeContext } from "../theme/ThemeContext";
 
 export default function LoginModernScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
+  const { showAlert, feedback } = useFeedback();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
@@ -28,12 +31,13 @@ export default function LoginModernScreen({ navigation }: any) {
     void warmUpApi();
     getCurrentUser()
       .then((user) => { if (user) navigation.replace("Principal"); })
+      .catch(() => showAlert("Sessão indisponível", "Entre novamente para continuar."))
       .finally(() => setCheckingSession(false));
-  }, [navigation]);
+  }, [navigation, showAlert]);
 
   async function submit() {
     if (!email.trim() || !password) {
-      Alert.alert("Campos obrigatórios", "Informe seu e-mail e sua senha.");
+      showAlert("Campos obrigatórios", "Informe seu e-mail e sua senha.");
       return;
     }
     setSubmitting(true);
@@ -41,7 +45,7 @@ export default function LoginModernScreen({ navigation }: any) {
       await login(email.trim(), password);
       navigation.replace("Principal");
     } catch (caught) {
-      Alert.alert("Não foi possível entrar", caught instanceof Error ? caught.message : "Tente novamente.");
+      showAlert("Não foi possível entrar", caught instanceof Error ? caught.message : "Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -53,7 +57,8 @@ export default function LoginModernScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView style={[styles.flex, { backgroundColor: colors.background }]} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={[styles.flex, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 24, 48), paddingBottom: Math.max(insets.bottom + 24, 48) }]} keyboardShouldPersistTaps="handled">
+        {feedback}
         <View style={[styles.logo, { backgroundColor: colors.primarySoft }]}><Ionicons name="school" size={38} color={colors.primary} /></View>
         <Text style={[styles.brand, { color: colors.text }]}>Learn<Text style={{ color: colors.primary }}>Hub</Text></Text>
         <Text style={[styles.tagline, { color: colors.muted }]}>Projetos educacionais conectados a pessoas que fazem acontecer.</Text>
@@ -91,7 +96,7 @@ export default function LoginModernScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  content: { flexGrow: 1, justifyContent: "center", padding: 22, paddingVertical: 42 },
+  content: { flexGrow: 1, justifyContent: "center", padding: 24, paddingVertical: 48, width: "100%", maxWidth: 520, alignSelf: "center" },
   logo: { alignSelf: "center", width: 72, height: 72, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   brand: { textAlign: "center", fontSize: 38, fontWeight: "900", letterSpacing: -1.2, marginTop: 13 },
   tagline: { textAlign: "center", fontSize: 14, lineHeight: 20, maxWidth: 330, alignSelf: "center", marginTop: 7, marginBottom: 28 },
@@ -100,7 +105,7 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 13, marginTop: 4, marginBottom: 23 },
   label: { fontSize: 13, fontWeight: "800", marginBottom: 8 },
   inputBox: { minHeight: 55, borderWidth: 1, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, marginBottom: 17 },
-  input: { flex: 1, height: "100%", fontSize: 15 },
+  input: { flex: 1, minHeight: 54, paddingVertical: 14, fontSize: 15 },
   button: { minHeight: 57, borderRadius: 17, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, marginTop: 7 },
   buttonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   registerLink: { padding: 18, alignItems: "center" },

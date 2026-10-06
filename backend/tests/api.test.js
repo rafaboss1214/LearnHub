@@ -121,6 +121,42 @@ projectsRepository.removeComment = async (id) => commentsById.delete(Number(id))
 // O app é carregado depois dos adapters acima, mantendo o teste sem dependência de MySQL local.
 const app = require("../src/app");
 
+test("admin gerencia projetos de outros usuários e o cadastro público não permite admin", async () => {
+  const { server, baseUrl } = await listen();
+  const passwordHash = await bcrypt.hash("SenhaTesteAdmin123", 4);
+  const owner = await usersRepository.create({ nome: "Dono", email: "owner@test.local", passwordHash, tipo: "diretor" });
+  const other = await usersRepository.create({ nome: "Outro", email: "other@test.local", passwordHash, tipo: "diretor" });
+  const admin = await usersRepository.create({ nome: "Admin", email: "admin@test.local", passwordHash, tipo: "admin" });
+  async function token(user) {
+    const response = await api(baseUrl, "/api/auth/login", { method: "POST", body: JSON.stringify({ email: user.email, senha: "SenhaTesteAdmin123" }) });
+    assert.equal(response.status, 200);
+    return { Authorization: `Bearer ${response.body.token}` };
+  }
+  const originalQuery = database.pool.query;
+  try {
+    const rejected = await api(baseUrl, "/api/auth/register", { method: "POST", body: JSON.stringify({ nome: "Intruso", email: "intruso@test.local", senha: "SenhaTesteAdmin123", tipo: "admin" }) });
+    assert.equal(rejected.status, 400);
+    const ownerHeaders = await token(owner), otherHeaders = await token(other), adminHeaders = await token(admin);
+    const created = await api(baseUrl, "/api/projects", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ titulo: "Projeto protegido", descricao: "Projeto para validar autorização administrativa.", categoria: "Tecnologia" }) });
+    assert.equal(created.status, 201);
+    const id = created.body.project.id;
+    assert.equal((await api(baseUrl, `/api/projects/${id}`, { method: "DELETE", headers: otherHeaders })).status, 403);
+    assert.equal((await api(baseUrl, `/api/projects/${id}`, { method: "PUT", headers: otherHeaders, body: JSON.stringify({ titulo: "Alteração indevida" }) })).status, 403);
+    assert.equal((await api(baseUrl, "/api/admin/dashboard", { headers: ownerHeaders })).status, 403);
+    database.pool.query = async sql => sql.includes("GROUP BY") ? [[{ categoria: "Tecnologia", total: 1 }]] : [[{ usuarios: 3, diretores: 2, projetos: 1, concluidos: 0, apoios: 0, favoritos: 0, comentarios: 0 }]];
+    const dashboard = await api(baseUrl, "/api/admin/dashboard", { headers: adminHeaders });
+    assert.equal(dashboard.status, 200);
+    assert.equal(dashboard.body.dashboard.usuarios, 3);
+    assert.equal((await api(baseUrl, `/api/projects/${id}`, { method: "DELETE", headers: adminHeaders })).status, 204);
+    assert.equal((await api(baseUrl, `/api/projects/${id}`, { headers: ownerHeaders })).status, 404);
+    admin.tipo_usuario = "colaborador";
+    assert.equal((await api(baseUrl, "/api/admin/dashboard", { headers: adminHeaders })).status, 403);
+  } finally {
+    database.pool.query = originalQuery;
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 function listen() {
   return new Promise((resolve) => {
     const server = app.listen(0, "127.0.0.1", () => {

@@ -59,8 +59,14 @@ function validateProject(payload, partial = false) {
 }
 
 function assertDirector(auth) {
-  if (auth?.tipo !== "diretor") {
+  if (!["diretor", "admin"].includes(auth?.tipo)) {
     throw new AppError(403, "Apenas diretores podem gerenciar projetos.");
+  }
+}
+
+function assertOwnership(project, auth) {
+  if (auth.tipo !== "admin" && Number(project.criador?.id) !== Number(auth.sub)) {
+    throw new AppError(403, "Você só pode gerenciar seus próprios projetos.");
   }
 }
 
@@ -115,7 +121,8 @@ async function create(payload, auth) {
 async function update(idValue, payload, auth) {
   assertDirector(auth);
   const id = parseId(idValue);
-  await getById(id, auth);
+  const project = await getById(id, auth);
+  assertOwnership(project, auth);
   const values = validateProject(payload || {}, true);
   await projectsRepository.update(id, values);
   return getById(id, auth);
@@ -124,7 +131,8 @@ async function update(idValue, payload, auth) {
 async function remove(idValue, auth) {
   assertDirector(auth);
   const id = parseId(idValue);
-  await getById(id, auth);
+  const project = await getById(id, auth);
+  assertOwnership(project, auth);
   await projectsRepository.remove(id);
 }
 
@@ -170,7 +178,7 @@ async function removeComment(commentIdValue, auth) {
   const comment = await projectsRepository.findCommentById(id);
   if (!comment) throw new AppError(404, "Comentário não encontrado.");
   const userId = parseId(auth.sub, "Usuário");
-  if (Number(comment.usuario_id) !== userId && auth.tipo !== "diretor") {
+  if (Number(comment.usuario_id) !== userId && !["diretor", "admin"].includes(auth.tipo)) {
     throw new AppError(403, "Você não pode excluir este comentário.");
   }
   await projectsRepository.removeComment(id);

@@ -9,9 +9,10 @@ const { getPreferredLocalIPv4 } = require("../backend/src/utils/network");
 const projectRoot = path.resolve(__dirname, "..");
 const appConfig = require(path.join(projectRoot, "app.json"));
 dotenv.config({ path: path.join(projectRoot, ".env"), quiet: true });
+dotenv.config({ path: path.join(projectRoot, ".env.local"), quiet: true });
 
 const wantsTunnel = process.argv.includes("--tunnel");
-const wantsLocalApi = process.argv.includes("--local-api");
+const wantsLocalApi = process.argv.includes("--local-api") || process.env.LEARNHUB_LOCAL_API === "true";
 const CLOUDFLARED_VERSION = "2026.8.3";
 const CLOUDFLARED_SHA256 = Object.freeze({
   "cloudflared-windows-amd64.exe": "83e726ed18ea78c5ad5213c4c3a3a27051393950d2bc8ed4de69bec12d14eaae",
@@ -189,7 +190,7 @@ function startCloudflareTunnel(executable, targetUrl, label) {
   return { child, ready };
 }
 
-async function waitForExpoManifest(baseUrl, timeoutMs = 120000) {
+async function waitForExpoManifest(baseUrl, timeoutMs = 120000, requireTunnel = false) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
 
@@ -208,7 +209,8 @@ async function waitForExpoManifest(baseUrl, timeoutMs = 120000) {
       if (
         response.ok &&
         contentType.includes("application/expo+json") &&
-        manifest?.launchAsset?.url
+        manifest?.launchAsset?.url &&
+        (!requireTunnel || new URL(manifest.launchAsset.url).hostname.endsWith(".exp.direct"))
       ) {
         return manifest;
       }
@@ -244,10 +246,8 @@ async function main() {
 
   let effectiveTunnel = wantsTunnel;
   let apiTunnel = null;
-  let metroTunnel = null;
-  let packagerProxyUrl = null;
 
-  if (effectiveTunnel) {
+  if (effectiveTunnel && !publicApiUrl) {
     try {
       const cloudflared = await resolveCloudflared();
       if (!publicApiUrl) {
@@ -257,20 +257,9 @@ async function main() {
         console.log(`[API] Túnel público conectado: ${publicApiUrl}`);
       }
 
-      const tunnel = startCloudflareTunnel(
-        cloudflared,
-        `http://127.0.0.1:${metroPort}`,
-        "do Expo",
-      );
-      metroTunnel = tunnel.child;
-      packagerProxyUrl = await tunnel.ready;
-      console.log(`[Expo] Túnel público conectado: ${packagerProxyUrl}`);
     } catch (error) {
       apiTunnel?.kill();
-      metroTunnel?.kill();
       apiTunnel = null;
-      metroTunnel = null;
-      packagerProxyUrl = null;
       effectiveTunnel = false;
       console.warn(`[Túnel] ${error.message}.`);
       console.warn("[Túnel] Continuando automaticamente em LAN. Use o mesmo Wi-Fi ou hotspot no celular.");
@@ -285,23 +274,27 @@ async function main() {
   const expoArguments = [
     expoCli,
     "start",
-    effectiveTunnel ? "--lan" : "--offline",
+    effectiveTunnel ? "--tunnel" : "--offline",
+    "--go",
     "--port",
     String(metroPort),
   ];
   console.log(
     `[Expo] Iniciando na porta ${metroPort} (${effectiveTunnel ? "túnel público" : "rede local"}).`,
   );
+  const expoEnvironment = { ...process.env };
+  // Um proxy antigo substituiria o endereço gerado pelo túnel oficial.
+  delete expoEnvironment.EXPO_PACKAGER_PROXY_URL;
+  if (effectiveTunnel) delete expoEnvironment.REACT_NATIVE_PACKAGER_HOSTNAME;
   const expo = spawn(process.execPath, expoArguments, {
     cwd: projectRoot,
     stdio: "inherit",
     env: {
-      ...process.env,
+      ...expoEnvironment,
       ...(!effectiveTunnel && preferredAddress
         ? { REACT_NATIVE_PACKAGER_HOSTNAME: preferredAddress }
         : {}),
       ...(publicApiUrl ? { EXPO_PUBLIC_API_URL: publicApiUrl } : {}),
-      ...(packagerProxyUrl ? { EXPO_PACKAGER_PROXY_URL: packagerProxyUrl } : {}),
     },
   });
 
@@ -313,12 +306,21 @@ async function main() {
     desiredExitCode = exitCode;
     if (api && !api.killed) api.kill();
     if (apiTunnel && !apiTunnel.killed) apiTunnel.kill();
-    if (metroTunnel && !metroTunnel.killed) metroTunnel.kill();
     if (!expo.killed) expo.kill();
   }
 
-  const verificationUrl = packagerProxyUrl || `http://127.0.0.1:${metroPort}`;
-  void waitForExpoManifest(verificationUrl)
+  const verificationUrl = `http://127.0.0.1:${metroPort}`;
+  void waitForExpoManifest(verificationUrl, 120000, effectiveTunnel)
+    .then(async (manifest) => {
+      if (!effectiveTunnel) return manifest;
+      const publicUrl = new URL(manifest.launchAsset.url).origin;
+      if (!publicUrl.endsWith(".exp.direct")) {
+        throw new Error("o manifesto não aponta para o túnel oficial do Expo");
+      }
+      const publicManifest = await waitForExpoManifest(publicUrl, 30000);
+      console.log(`[Expo] Manifesto público validado: ${publicUrl}`);
+      return publicManifest;
+    })
     .then((manifest) => {
       if (stopping) return;
       console.log("====================================");

@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { ApiError, apiRequest } from "./api";
 
-export type AuthUser = { id: number; nome: string; email: string; tipo: "colaborador" | "diretor"; createdAt?: string };
+export type AuthUser = { id: number; nome: string; email: string; tipo: "colaborador" | "diretor" | "admin"; createdAt?: string };
 
 const TOKEN_KEY = "learnhub.authToken";
 
@@ -24,7 +24,7 @@ export async function clearSession() {
   ]);
 }
 
-export async function register(payload: { nome: string; email: string; senha: string; tipo: AuthUser["tipo"] }) {
+export async function register(payload: { nome: string; email: string; senha: string; tipo: "colaborador" | "diretor" }) {
   return apiRequest<{ message: string; user: AuthUser }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
