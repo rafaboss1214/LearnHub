@@ -8,11 +8,12 @@ async function health(_request, response) {
       api: "online",
       database: "connected",
     });
-  } catch {
+  } catch (error) {
     return response.status(503).json({
       success: false,
       api: "online",
       database: "disconnected",
+      databaseError: error?.code || "UNKNOWN_DATABASE_ERROR",
       message: "A API está online, mas não conseguiu acessar o banco de dados.",
     });
   }
