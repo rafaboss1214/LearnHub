@@ -14,11 +14,28 @@ function boolean(value, fallback = false) {
   return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
 }
 
+function databaseEndpoint(value, configuredPort) {
+  const raw = String(value || "localhost").trim();
+  const fallbackPort = positiveInteger(configuredPort, 3306);
+
+  try {
+    const url = new URL(raw.includes("://") ? raw : `mysql://${raw}`);
+    return {
+      host: url.hostname || "localhost",
+      port: positiveInteger(url.port, fallbackPort),
+    };
+  } catch {
+    return { host: raw, port: fallbackPort };
+  }
+}
+
+const database = databaseEndpoint(process.env.DB_HOST, process.env.DB_PORT);
+
 module.exports = Object.freeze({
   envPath,
   PORT: positiveInteger(process.env.PORT, 3000),
-  DB_HOST: process.env.DB_HOST || "localhost",
-  DB_PORT: positiveInteger(process.env.DB_PORT, 3306),
+  DB_HOST: database.host,
+  DB_PORT: database.port,
   DB_USER: process.env.DB_USER || "root",
   DB_PASSWORD: process.env.DB_PASSWORD || "",
   DB_NAME: process.env.DB_NAME || "learnhub",
@@ -27,4 +44,5 @@ module.exports = Object.freeze({
   DB_SSL_CA_BASE64: process.env.DB_SSL_CA_BASE64 || "",
   JWT_SECRET: process.env.JWT_SECRET || "",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
+  databaseEndpoint,
 });

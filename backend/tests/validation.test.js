@@ -1,6 +1,18 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { databaseEndpoint } = require("../src/config/env");
 const { normalizeEmail, publicUser, validateRegistration } = require("../src/services/auth-service");
+
+test("normaliza host MySQL copiado como URL ou host com porta", () => {
+  assert.deepEqual(databaseEndpoint(" mysql://db.example.com:24876/defaultdb ", 3306), {
+    host: "db.example.com",
+    port: 24876,
+  });
+  assert.deepEqual(databaseEndpoint("db.example.com:24876", 3306), {
+    host: "db.example.com",
+    port: 24876,
+  });
+});
 
 test("normaliza e-mail antes de consultar o banco", () => {
   assert.equal(normalizeEmail("  Pessoa@Example.COM "), "pessoa@example.com");
