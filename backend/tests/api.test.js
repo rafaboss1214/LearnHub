@@ -92,6 +92,7 @@ projectsRepository.update = async (id, fields) => {
   return true;
 };
 projectsRepository.remove = async (id) => projectsById.delete(Number(id));
+projectsRepository.hasCollaborationHistory = async () => false;
 projectsRepository.toggleRelation = async (table, projectId, userId) => {
   const collection = table === "projetos_favoritos" ? favorites : supports;
   const key = `${projectId}:${userId}`;

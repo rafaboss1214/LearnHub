@@ -1,12 +1,17 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { clearSession } from "../services/auth";
+import { AuthUser, clearSession, getCurrentUser } from "../services/auth";
 import Feedback, { FeedbackState } from "../components/Feedback";
 
 import TabNavigator from "./TabNavigator";
 import ProfileScreen from "../screens/ProfileOverviewScreen";
+import ChatScreen from "../screens/ChatScreen";
+import CollaborationsScreen from "../screens/CollaborationsScreen";
+import ModerationScreen from "../screens/ModerationScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
+import ProgressScreen from "../screens/ProgressScreen";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const Drawer = createDrawerNavigator();
@@ -68,6 +73,8 @@ function CustomDrawerContent(props: any) {
 
 export default function DrawerMenu() {
   const { colors } = useContext(ThemeContext);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  useEffect(() => { void getCurrentUser().then(setUser); }, []);
 
   return (
     <Drawer.Navigator
@@ -95,6 +102,31 @@ export default function DrawerMenu() {
           drawerIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
+      <Drawer.Screen
+        name="Solicitações"
+        component={CollaborationsScreen}
+        options={{ drawerIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="Mensagens"
+        component={ChatScreen}
+        options={{ drawerIcon: ({ color, size }) => <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="Progressão"
+        component={ProgressScreen}
+        options={{ drawerIcon: ({ color, size }) => <Ionicons name="trophy-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="Notificações"
+        component={NotificationsScreen}
+        options={{ drawerIcon: ({ color, size }) => <Ionicons name="notifications-outline" size={size} color={color} /> }}
+      />
+      {user?.tipo === "admin" && <Drawer.Screen
+        name="Moderação"
+        component={ModerationScreen}
+        options={{ drawerIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" size={size} color={color} /> }}
+      />}
       <Drawer.Screen
         name="Configurações"
         component={SettingsScreen}

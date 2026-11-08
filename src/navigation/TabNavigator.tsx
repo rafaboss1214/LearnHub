@@ -115,7 +115,7 @@ export default function TabNavigator() {
       />
 
       {/* O Dashboard só é registrado se o utilizador for 'diretor' */}
-      {userType === "diretor" && (
+      {(userType === "diretor" || userType === "admin") && (
         <Tab.Screen
           name="Dashboard"
           component={DashboardScreen}

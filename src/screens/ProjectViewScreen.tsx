@@ -5,6 +5,7 @@ import React, { useCallback, useContext, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,9 +21,9 @@ import {
   getProject,
   Project,
   toggleFavorite,
-  toggleSupport,
   updateProject,
 } from "../services/projects";
+import { createCollaboration, reportProject, SUPPORT_CATEGORIES } from "../services/community";
 import { ThemeContext } from "../theme/ThemeContext";
 
 export default function ProjectViewScreen({ navigation, route }: any) {
@@ -35,6 +36,13 @@ export default function ProjectViewScreen({ navigation, route }: any) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [supportCategory, setSupportCategory] = useState("");
+  const [supportDescription, setSupportDescription] = useState("");
+  const [availability, setAvailability] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Conteúdo falso ou enganoso");
+  const [reportDetails, setReportDetails] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -95,6 +103,30 @@ export default function ProjectViewScreen({ navigation, route }: any) {
     ]);
   }
 
+  async function submitCollaboration() {
+    if (!supportCategory || supportDescription.trim().length < 10) {
+      showAlert("Revise a solicitação", "Escolha uma categoria e descreva como você pode ajudar.");
+      return;
+    }
+    await run(async () => {
+      await createCollaboration(projectId, { category: supportCategory, description: supportDescription.trim(), availability: availability.trim() });
+      setRequestOpen(false); setSupportDescription(""); setAvailability("");
+      showAlert("Solicitação enviada", "A escola poderá aceitar ou recusar sua oferta.");
+    });
+  }
+
+  async function submitReport() {
+    if (reportDetails.trim().length < 10) {
+      showAlert("Inclua mais detalhes", "Descreva o problema com pelo menos 10 caracteres.");
+      return;
+    }
+    await run(async () => {
+      await reportProject(projectId, reportReason, reportDetails.trim());
+      setReportOpen(false); setReportDetails("");
+      showAlert("Denúncia enviada", "A moderação poderá analisar o conteúdo.");
+    });
+  }
+
   if (loading) {
     return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
@@ -113,6 +145,7 @@ export default function ProjectViewScreen({ navigation, route }: any) {
 
   const director = user?.tipo === "diretor" || user?.tipo === "admin";
   const canManage = user?.tipo === "admin" || (user?.tipo === "diretor" && Number(project.criador?.id) === Number(user.id));
+  const availableCategories = project.supportCategories?.length ? project.supportCategories : [...SUPPORT_CATEGORIES];
 
   return (
     <ScrollView style={[styles.page, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
@@ -146,16 +179,19 @@ export default function ProjectViewScreen({ navigation, route }: any) {
           <Ionicons name={project.favorito ? "heart" : "heart-outline"} size={23} color={project.favorito ? colors.danger : colors.muted} />
           <Text style={[styles.actionText, { color: colors.text }]}>{project.totalFavoritos} favoritos</Text>
         </TouchableOpacity>
-        {!director && (
-          <TouchableOpacity disabled={saving} onPress={() => void run(() => toggleSupport(project.id))} style={styles.actionItem}>
-            <Ionicons name={project.apoiado ? "hand-left" : "hand-left-outline"} size={23} color={project.apoiado ? colors.success : colors.muted} />
-            <Text style={[styles.actionText, { color: colors.text }]}>{project.totalApoios} apoios</Text>
+        {user?.tipo === "colaborador" && (
+          <TouchableOpacity disabled={saving} onPress={() => { setSupportCategory(availableCategories[0]); setRequestOpen(true); }} style={styles.actionItem}>
+            <Ionicons name="hand-left-outline" size={23} color={colors.success} />
+            <Text style={[styles.actionText, { color: colors.text }]}>Oferecer ajuda</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Sobre o projeto</Text>
       <Text style={[styles.description, { color: colors.muted }]}>{project.descricao}</Text>
+
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Apoios necessários</Text>
+      <View style={styles.supportTags}>{availableCategories.map((item) => <View key={item} style={[styles.supportTag, { backgroundColor: colors.primarySoft }]}><Text style={{ color: colors.primary, fontSize: 11, fontWeight: "800" }}>{item}</Text></View>)}</View>
 
       {canManage && (
         <View style={styles.manageRow}>
@@ -176,6 +212,8 @@ export default function ProjectViewScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       )}
+
+      {!canManage && <TouchableOpacity onPress={() => setReportOpen(true)} style={styles.reportLink}><Ionicons name="flag-outline" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Denunciar projeto</Text></TouchableOpacity>}
 
       <View style={[styles.commentsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Comentários</Text>
@@ -210,6 +248,10 @@ export default function ProjectViewScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal visible={requestOpen} transparent animationType="slide" onRequestClose={() => setRequestOpen(false)}><View style={styles.modalBackdrop}><ScrollView style={[styles.modalCard, { backgroundColor: colors.card }]} contentContainerStyle={styles.modalContent}><Text style={[styles.modalTitle, { color: colors.text }]}>Oferecer colaboração</Text><Text style={[styles.modalText, { color: colors.muted }]}>Escolha uma das categorias solicitadas pela escola.</Text><View style={styles.supportTags}>{availableCategories.map((item) => <TouchableOpacity key={item} onPress={() => setSupportCategory(item)} style={[styles.supportTag, { backgroundColor: supportCategory === item ? colors.primary : colors.primarySoft }]}><Text style={{ color: supportCategory === item ? "#fff" : colors.primary, fontSize: 11, fontWeight: "800" }}>{item}</Text></TouchableOpacity>)}</View><TextInput value={supportDescription} onChangeText={setSupportDescription} multiline maxLength={1500} placeholder="Explique como você pode contribuir" placeholderTextColor={colors.muted} style={[styles.modalInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} /><TextInput value={availability} onChangeText={setAvailability} maxLength={200} placeholder="Disponibilidade (opcional)" placeholderTextColor={colors.muted} style={[styles.modalInput, styles.singleInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.modalActions}><TouchableOpacity onPress={() => setRequestOpen(false)} style={[styles.modalButton, { borderColor: colors.border }]}><Text style={{ color: colors.muted, fontWeight: "800" }}>Cancelar</Text></TouchableOpacity><TouchableOpacity disabled={saving} onPress={() => void submitCollaboration()} style={[styles.modalButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}><Text style={styles.whiteText}>Enviar</Text></TouchableOpacity></View></ScrollView></View></Modal>
+
+      <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}><View style={styles.modalBackdrop}><ScrollView style={[styles.modalCard, { backgroundColor: colors.card }]} contentContainerStyle={styles.modalContent}><Text style={[styles.modalTitle, { color: colors.text }]}>Denunciar projeto</Text><View style={styles.reportReasons}>{["Conteúdo falso ou enganoso", "Risco ou conteúdo malicioso", "Informações impróprias", "Outro"].map((item) => <TouchableOpacity key={item} onPress={() => setReportReason(item)} style={[styles.reasonOption, { borderColor: reportReason === item ? colors.primary : colors.border, backgroundColor: reportReason === item ? colors.primarySoft : colors.background }]}><Text style={{ color: reportReason === item ? colors.primary : colors.text, fontWeight: "700", fontSize: 12 }}>{item}</Text></TouchableOpacity>)}</View><TextInput value={reportDetails} onChangeText={setReportDetails} multiline maxLength={1000} placeholder="Descreva o ocorrido" placeholderTextColor={colors.muted} style={[styles.modalInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} /><View style={styles.modalActions}><TouchableOpacity onPress={() => setReportOpen(false)} style={[styles.modalButton, { borderColor: colors.border }]}><Text style={{ color: colors.muted, fontWeight: "800" }}>Cancelar</Text></TouchableOpacity><TouchableOpacity disabled={saving} onPress={() => void submitReport()} style={[styles.modalButton, { backgroundColor: colors.danger, borderColor: colors.danger }]}><Text style={styles.whiteText}>Enviar denúncia</Text></TouchableOpacity></View></ScrollView></View></Modal>
     </ScrollView>
   );
 }
@@ -233,6 +275,8 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 12, fontWeight: "700" },
   sectionTitle: { fontSize: 19, fontWeight: "800", marginTop: 28, marginBottom: 10 },
   description: { fontSize: 15, lineHeight: 24 },
+  supportTags: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  supportTag: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 8 },
   manageRow: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 24 },
   manageButton: { flex: 1, minHeight: 48, borderRadius: 15, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
   manageText: { fontSize: 13, fontWeight: "800" },
@@ -249,4 +293,16 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 17, fontWeight: "800", textAlign: "center", marginTop: 12 },
   retry: { borderRadius: 15, paddingHorizontal: 18, paddingVertical: 12, marginTop: 18 },
   whiteText: { color: "#FFFFFF", fontWeight: "800" },
+  reportLink: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 24, paddingVertical: 8 },
+  modalBackdrop: { flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" },
+  modalCard: { maxHeight: "85%", borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  modalContent: { padding: 22, paddingBottom: 38 },
+  modalTitle: { fontSize: 23, fontWeight: "900" },
+  modalText: { fontSize: 13, lineHeight: 19, marginTop: 5, marginBottom: 14 },
+  modalInput: { minHeight: 120, borderWidth: 1, borderRadius: 16, padding: 13, textAlignVertical: "top", marginTop: 16 },
+  singleInput: { minHeight: 52, textAlignVertical: "center" },
+  modalActions: { flexDirection: "row", gap: 9, marginTop: 18 },
+  modalButton: { flex: 1, minHeight: 50, borderWidth: 1, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  reportReasons: { gap: 8, marginTop: 16 },
+  reasonOption: { borderWidth: 1, borderRadius: 13, padding: 12 },
 });

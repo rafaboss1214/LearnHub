@@ -12,6 +12,8 @@ const PROJECT_SELECT = `
     p.created_at,
     p.updated_at,
     u.nome AS criador_nome,
+    (SELECT GROUP_CONCAT(pc.categoria ORDER BY pc.categoria SEPARATOR '||')
+       FROM projeto_categorias_apoio pc WHERE pc.projeto_id = p.id) AS apoio_categorias,
     (SELECT COUNT(*) FROM projetos_favoritos pf WHERE pf.projeto_id = p.id) AS total_favoritos,
     (SELECT COUNT(*) FROM projetos_apoios pa WHERE pa.projeto_id = p.id) AS total_apoios,
     EXISTS(
@@ -52,13 +54,34 @@ async function findById(id, userId) {
   return { ...rows[0], comments };
 }
 
-async function create({ titulo, descricao, categoria, imagemUrl, status, creatorId }) {
-  const [result] = await pool.execute(
-    `INSERT INTO projetos (titulo, descricao, categoria, imagem_url, status, criador_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [titulo, descricao, categoria, imagemUrl || null, status, creatorId],
-  );
-  return result.insertId;
+async function replaceSupportCategories(projectId, categories, database = pool) {
+  await database.execute("DELETE FROM projeto_categorias_apoio WHERE projeto_id = ?", [projectId]);
+  for (const category of categories) {
+    await database.execute(
+      "INSERT INTO projeto_categorias_apoio (projeto_id, categoria) VALUES (?, ?)",
+      [projectId, category],
+    );
+  }
+}
+
+async function create({ titulo, descricao, categoria, imagemUrl, status, creatorId, supportCategories }) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [result] = await connection.execute(
+      `INSERT INTO projetos (titulo, descricao, categoria, imagem_url, status, criador_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [titulo, descricao, categoria, imagemUrl || null, status, creatorId],
+    );
+    await replaceSupportCategories(result.insertId, supportCategories, connection);
+    await connection.commit();
+    return result.insertId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function update(id, fields) {
@@ -70,7 +93,10 @@ async function update(id, fields) {
     status: "status",
   };
   const entries = Object.entries(fields).filter(([key]) => columns[key]);
-  if (!entries.length) return false;
+  if (Object.hasOwn(fields, "supportCategories")) {
+    await replaceSupportCategories(id, fields.supportCategories);
+  }
+  if (!entries.length) return Object.hasOwn(fields, "supportCategories");
 
   const setClause = entries.map(([key]) => `${columns[key]} = ?`).join(", ");
   const values = entries.map(([, value]) => value === "" ? null : value);
@@ -84,6 +110,14 @@ async function update(id, fields) {
 async function remove(id) {
   const [result] = await pool.execute("DELETE FROM projetos WHERE id = ?", [id]);
   return result.affectedRows > 0;
+}
+
+async function hasCollaborationHistory(id) {
+  const [rows] = await pool.execute(
+    "SELECT id FROM solicitacoes_colaboracao WHERE projeto_id = ? LIMIT 1",
+    [id],
+  );
+  return Boolean(rows[0]);
 }
 
 async function toggleRelation(table, projectId, userId) {
@@ -137,6 +171,7 @@ module.exports = {
   create,
   update,
   remove,
+  hasCollaborationHistory,
   toggleRelation,
   createComment,
   findCommentById,

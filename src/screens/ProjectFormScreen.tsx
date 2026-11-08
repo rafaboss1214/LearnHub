@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { createProject, getProject, ProjectStatus, updateProject } from "../services/projects";
+import { SUPPORT_CATEGORIES } from "../services/community";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const categories = [
@@ -33,6 +34,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
   const [category, setCategory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("publicado");
+  const [supportCategories, setSupportCategories] = useState<string[]>([...SUPPORT_CATEGORIES]);
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -47,14 +49,15 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         setCategory(project.categoria);
         setImageUrl(project.imagemUrl);
         setStatus(project.status);
+        setSupportCategories(project.supportCategories?.length ? project.supportCategories : [...SUPPORT_CATEGORIES]);
       })
       .catch((error) => setLoadError(error.message))
       .finally(() => setLoading(false));
   }, [projectId, retry]);
 
   async function submit() {
-    if (title.trim().length < 3 || description.trim().length < 10 || !category) {
-      showAlert("Revise os campos", "Informe título, categoria e uma descrição com pelo menos 10 caracteres.");
+    if (title.trim().length < 3 || description.trim().length < 10 || !category || !supportCategories.length) {
+      showAlert("Revise os campos", "Informe título, categoria, descrição e ao menos uma categoria de apoio.");
       return;
     }
 
@@ -66,6 +69,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         categoria: category,
         imagemUrl: imageUrl.trim(),
         status,
+        supportCategories,
       };
       if (projectId) await updateProject(projectId, payload);
       else await createProject(payload);
@@ -151,6 +155,15 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         />
         <Text style={[styles.hint, { color: colors.muted }]}>Use uma URL pública para a imagem aparecer em todos os aparelhos.</Text>
 
+        <Text style={[styles.label, { color: colors.text }]}>Apoios necessários</Text>
+        <Text style={[styles.hintAbove, { color: colors.muted }]}>Escolha as categorias pelas quais colaboradores poderão oferecer ajuda.</Text>
+        <View style={styles.options}>
+          {SUPPORT_CATEGORIES.map((item) => {
+            const selected = supportCategories.includes(item);
+            return <TouchableOpacity key={item} onPress={() => setSupportCategories((current) => selected ? current.filter((value) => value !== item) : [...current, item])} style={[styles.option, { backgroundColor: selected ? colors.primarySoft : colors.card, borderColor: selected ? colors.primary : colors.border }]}><Ionicons name={selected ? "checkbox" : "square-outline"} size={17} color={selected ? colors.primary : colors.muted} /><Text style={[styles.optionText, { color: selected ? colors.primary : colors.text }]}>{item}</Text></TouchableOpacity>;
+          })}
+        </View>
+
         {editing && (
           <>
             <Text style={[styles.label, styles.statusLabel, { color: colors.text }]}>Status</Text>
@@ -196,9 +209,10 @@ const styles = StyleSheet.create({
   input: { minHeight: 54, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, fontSize: 15, marginBottom: 20 },
   textArea: { minHeight: 142, paddingTop: 15, textAlignVertical: "top" },
   options: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginBottom: 22 },
-  option: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 10 },
+  option: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 6 },
   optionText: { fontSize: 12, fontWeight: "700" },
   hint: { fontSize: 12, lineHeight: 17, marginTop: -12, marginBottom: 20 },
+  hintAbove: { fontSize: 12, lineHeight: 17, marginTop: -4, marginBottom: 10 },
   statusLabel: { marginTop: 4 },
   statusRow: { flexDirection: "row", gap: 10, marginBottom: 26 },
   statusOption: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 15, flexDirection: "row", gap: 7, alignItems: "center", justifyContent: "center" },

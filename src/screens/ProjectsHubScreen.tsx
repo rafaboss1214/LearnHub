@@ -84,6 +84,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
   }
 
   const director = user?.tipo === "diretor" || user?.tipo === "admin";
+  const collaborator = user?.tipo === "colaborador";
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
@@ -212,7 +213,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
                       <Ionicons name={item.favorito ? "heart" : "heart-outline"} size={21} color={item.favorito ? colors.danger : colors.muted} />
                       <Text style={[styles.count, { color: colors.muted }]}>{item.totalFavoritos}</Text>
                     </TouchableOpacity>
-                    {!director && (
+                    {collaborator && (
                       <TouchableOpacity
                         disabled={pending}
                         onPress={() => void runProjectAction(item.id, () => toggleSupport(item.id))}

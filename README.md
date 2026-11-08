@@ -10,7 +10,14 @@ Expo Go → API Express hospedada → MySQL hospedado
 - Login: `POST /api/auth/login`
 - Sessão atual: `GET /api/auth/me`
 - Projetos: criação, listagem, detalhes, edição e exclusão
-- Interações: favoritos, apoios e comentários
+- Interações: favoritos e comentários
+- Categorias de apoio escolhidas pela escola em cada projeto
+- Solicitações de colaboração com aceite ou recusa justificada
+- Chat privado liberado somente após o aceite
+- Encerramento bilateral, recompensa de 20 XP e progressão
+- Certificados emitidos pela escola e preservados no histórico
+- Notificações de solicitações, mensagens e certificados
+- Denúncias de projetos e painel de moderação para administradores
 - Perfil: consulta, edição e exclusão da própria conta
 - Diagnóstico da API e do banco: `GET /api/health`
 - Porta padrão da API: `3000`
@@ -393,6 +400,20 @@ O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hosp
 | `POST` | `/api/projects/:id/support` | Alterna apoio |
 | `POST` | `/api/projects/:id/comments` | Adiciona comentário |
 | `DELETE` | `/api/projects/comments/:id` | Exclui comentário autorizado |
+| `POST` | `/api/projects/:id/requests` | Envia uma solicitação de colaboração |
+| `GET` | `/api/collaborations` | Lista solicitações enviadas ou recebidas |
+| `PUT` | `/api/collaborations/:id` | Aceita ou recusa uma solicitação |
+| `POST` | `/api/collaborations/:id/closure` | Solicita, confirma ou recusa o encerramento |
+| `GET/POST` | `/api/collaborations/:id/messages` | Consulta ou envia mensagens privadas |
+| `PUT` | `/api/collaborations/:id/messages/read` | Marca mensagens como lidas |
+| `GET` | `/api/conversations` | Lista conversas liberadas |
+| `POST` | `/api/collaborations/:id/certificate` | Emite certificado após a conclusão |
+| `GET` | `/api/certificates/:code` | Consulta um certificado autorizado |
+| `GET` | `/api/progress` | Retorna XP, nível e certificados |
+| `GET` | `/api/notifications` | Retorna contadores e notificações |
+| `POST` | `/api/projects/:id/reports` | Denuncia um projeto para análise |
+| `GET` | `/api/admin/moderation/reports` | Consulta a fila de moderação |
+| `PUT` | `/api/admin/moderation/reports/:id` | Atualiza uma denúncia em moderação |
 
 ## Checklist antes de apresentar
 
@@ -407,3 +428,7 @@ O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hosp
 - [ ] Usuário apareceu no banco
 - [ ] Login testado
 - [ ] Login redirecionou corretamente
+- [ ] Colaborador enviou uma solicitação
+- [ ] Diretor aceitou e o chat foi liberado
+- [ ] Os dois participantes confirmaram o encerramento
+- [ ] XP e certificado apareceram na progressão

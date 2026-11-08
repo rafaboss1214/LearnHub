@@ -1,64 +1,21 @@
-import {
-View,
-Text,
-StyleSheet
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useContext, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getNotifications } from "../services/community";
+import { ThemeContext } from "../theme/ThemeContext";
 
+type NotificationData = Awaited<ReturnType<typeof getNotifications>>;
+const icons: Record<string, keyof typeof Ionicons.glyphMap> = { request: "people-outline", message: "chatbubble-ellipses-outline", certificate: "ribbon-outline" };
 
-export default function NotificationsScreen(){
-
-
-return(
-
-<View style={styles.container}>
-
-
-<Text style={styles.title}>
-Notificações
-</Text>
-
-
-<Text style={styles.card}>
-❤️ Seu projeto recebeu apoio
-</Text>
-
-
-<Text style={styles.card}>
-💬 Novo comentário
-</Text>
-
-
-<Text style={styles.card}>
-🤝 Nova parceria interessada
-</Text>
-
-
-</View>
-
-
-)
-
+export default function NotificationsScreen({ navigation }: any) {
+  const { colors } = useContext(ThemeContext);
+  const [data, setData] = useState<NotificationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const load = useCallback(async () => { try { setData(await getNotifications()); setError(""); } catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível carregar as notificações."); } finally { setLoading(false); } }, []);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  function open(kind: string) { if (kind === "message") navigation.navigate("Mensagens"); else if (kind === "certificate") navigation.navigate("Progressão"); else navigation.navigate("Solicitações"); }
+  return <ScrollView style={[styles.page, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}><Text style={[styles.eyebrow, { color: colors.primary }]}>ATUALIZAÇÕES</Text><Text style={[styles.title, { color: colors.text }]}>Notificações</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{data?.count ? `${data.count} item(ns) aguardando você.` : "Tudo em dia por aqui."}</Text>{loading && <ActivityIndicator style={{ marginTop: 30 }} color={colors.primary} />}{!!error && <TouchableOpacity onPress={() => void load()}><Text style={[styles.error, { color: colors.danger }]}>{error} Toque para tentar novamente.</Text></TouchableOpacity>}{data && !data.items.length && <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}><Ionicons name="checkmark-circle-outline" size={45} color={colors.success} /><Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma novidade</Text><Text style={[styles.emptyText, { color: colors.muted }]}>Novas mensagens, solicitações e certificados aparecerão aqui.</Text></View>}{data?.items.map((item) => <TouchableOpacity key={item.kind} onPress={() => open(item.kind)} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}><View style={[styles.icon, { backgroundColor: colors.primarySoft }]}><Ionicons name={icons[item.kind] || "notifications-outline"} size={24} color={colors.primary} /></View><View style={{ flex: 1 }}><Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text><Text style={[styles.cardText, { color: colors.muted }]}>{item.detail}</Text></View><View style={[styles.count, { backgroundColor: colors.primary }]}><Text style={styles.countText}>{item.count}</Text></View></TouchableOpacity>)}</ScrollView>;
 }
-
-
-
-const styles=StyleSheet.create({
-
-container:{
-padding:20
-},
-
-title:{
-fontSize:28,
-fontWeight:"bold"
-},
-
-card:{
-backgroundColor:"#fff",
-padding:20,
-marginTop:15,
-borderRadius:15
-}
-
-
-})
+const styles = StyleSheet.create({ page: { flex: 1 }, content: { padding: 20, paddingBottom: 44 }, eyebrow: { fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }, title: { fontSize: 32, fontWeight: "900", marginTop: 4 }, subtitle: { fontSize: 14, marginTop: 5 }, error: { marginTop: 22 }, empty: { borderWidth: 1, borderRadius: 24, padding: 32, alignItems: "center", marginTop: 24 }, emptyTitle: { fontSize: 18, fontWeight: "900", marginTop: 10 }, emptyText: { fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 5 }, card: { borderWidth: 1, borderRadius: 20, padding: 15, flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12 }, icon: { width: 49, height: 49, borderRadius: 15, alignItems: "center", justifyContent: "center" }, cardTitle: { fontSize: 15, fontWeight: "900" }, cardText: { fontSize: 12, lineHeight: 18, marginTop: 3 }, count: { minWidth: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" }, countText: { color: "#fff", fontSize: 11, fontWeight: "900" } });

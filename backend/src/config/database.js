@@ -37,6 +37,10 @@ async function testDatabaseConnection() {
               created_at, updated_at
        FROM projetos LIMIT 0`,
     );
+    await connection.query(
+      `SELECT id, projeto_id, escola_id, colaborador_id, status
+       FROM solicitacoes_colaboracao LIMIT 0`,
+    );
     return true;
   } finally {
     connection.release();

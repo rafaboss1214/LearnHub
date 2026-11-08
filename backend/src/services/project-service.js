@@ -2,6 +2,13 @@ const projectsRepository = require("../repositories/projects-repository");
 const AppError = require("../utils/app-error");
 
 const VALID_STATUSES = new Set(["publicado", "concluido"]);
+const VALID_SUPPORT_CATEGORIES = new Set([
+  "Mão de obra",
+  "Recursos materiais",
+  "Conhecimento",
+  "Serviços",
+  "Outros",
+]);
 
 function parseId(value, label = "Projeto") {
   const id = Number.parseInt(value, 10);
@@ -52,6 +59,16 @@ function validateProject(payload, partial = false) {
     result.status = status;
   }
 
+  if (!partial || has("supportCategories")) {
+    const categories = Array.isArray(payload?.supportCategories)
+      ? [...new Set(payload.supportCategories.map((item) => String(item).trim()))]
+      : [...VALID_SUPPORT_CATEGORIES];
+    if (!categories.length || categories.some((item) => !VALID_SUPPORT_CATEGORIES.has(item))) {
+      throw new AppError(400, "Selecione ao menos uma categoria de apoio válida.");
+    }
+    result.supportCategories = categories;
+  }
+
   if (partial && !Object.keys(result).length) {
     throw new AppError(400, "Informe ao menos um campo para atualizar.");
   }
@@ -92,6 +109,9 @@ function publicProject(row) {
     totalApoios: Number(row.total_apoios || 0),
     favorito: Boolean(row.favorito),
     apoiado: Boolean(row.apoiado),
+    supportCategories: row.apoio_categorias
+      ? String(row.apoio_categorias).split("||")
+      : [...VALID_SUPPORT_CATEGORIES],
     comentarios: row.comments?.map(publicComment),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -133,6 +153,9 @@ async function remove(idValue, auth) {
   const id = parseId(idValue);
   const project = await getById(id, auth);
   assertOwnership(project, auth);
+  if (projectsRepository.hasCollaborationHistory && await projectsRepository.hasCollaborationHistory(id)) {
+    throw new AppError(409, "Projetos com histórico de colaboração não podem ser excluídos. Marque-o como concluído.");
+  }
   await projectsRepository.remove(id);
 }
 

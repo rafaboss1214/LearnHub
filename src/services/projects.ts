@@ -22,6 +22,7 @@ export type Project = {
   totalApoios: number;
   favorito: boolean;
   apoiado: boolean;
+  supportCategories: string[];
   comentarios?: ProjectComment[];
   createdAt: string;
   updatedAt: string;
@@ -33,6 +34,7 @@ export type ProjectInput = {
   categoria: string;
   imagemUrl?: string;
   status?: ProjectStatus;
+  supportCategories?: string[];
 };
 
 async function authorizedRequest<T>(path: string, options: RequestInit = {}) {
