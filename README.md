@@ -1,141 +1,209 @@
-# LearnHub — Expo Go + API hospedada + MySQL
+<p align="center">
+  <img src="./assets/images/icon.png" width="120" alt="Ícone do LearnHub">
+</p>
 
-O LearnHub usa autenticação e CRUD persistentes, com todos os dados importantes salvos no MySQL:
+<h1 align="center">LearnHub</h1>
+
+<p align="center">
+  Uma plataforma mobile que aproxima escolas e colaboradores para transformar necessidades reais em projetos, parcerias e impacto na comunidade.
+</p>
+
+<p align="center">
+  <img alt="Expo SDK 58" src="https://img.shields.io/badge/Expo_SDK-58-000020?style=for-the-badge&logo=expo&logoColor=white">
+  <img alt="React Native 0.88" src="https://img.shields.io/badge/React_Native-0.88-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
+  <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white">
+  <img alt="MySQL" src="https://img.shields.io/badge/MySQL-Hospedado-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="#-sobre-o-projeto">Sobre</a>&nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#-funcionalidades">Funcionalidades</a>&nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#-arquitetura">Arquitetura</a>&nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#-instalação">Instalação</a>&nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#-comandos">Comandos</a>&nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#-api">API</a>
+</p>
+
+---
+
+## 💡 Sobre o projeto
+
+O **LearnHub** é um aplicativo de colaboração educacional. Diretores publicam projetos e informam as categorias de apoio necessárias; colaboradores encontram oportunidades, enviam solicitações e acompanham toda a parceria pelo aplicativo.
+
+A solução inclui autenticação, CRUD completo de projetos, chat privado, notificações, moderação, progressão por XP e certificados. Os dados são persistidos em um MySQL hospedado por meio de uma API Express, sem expor o banco diretamente ao aplicativo.
 
 ```text
-Expo Go → API Express hospedada → MySQL hospedado
+Expo Go / aplicativo
+        ↓ HTTPS
+API REST — Node.js + Express
+        ↓ conexão autenticada com TLS em hospedagem
+MySQL hospedado
 ```
 
-- Cadastro: `POST /api/auth/register`
-- Login: `POST /api/auth/login`
-- Sessão atual: `GET /api/auth/me`
-- Projetos: criação, listagem, detalhes, edição e exclusão
-- Interações: favoritos e comentários
-- Categorias de apoio escolhidas pela escola em cada projeto
-- Solicitações de colaboração com aceite ou recusa justificada
-- Chat privado liberado somente após o aceite
-- Encerramento bilateral, recompensa de 20 XP e progressão
-- Certificados emitidos pela escola e preservados no histórico
-- Notificações de solicitações, mensagens e certificados
-- Denúncias de projetos e painel de moderação para administradores
-- Perfil: consulta, edição e exclusão da própria conta
-- Diagnóstico da API e do banco: `GET /api/health`
-- Porta padrão da API: `3000`
-- O backend escuta em `0.0.0.0`, portanto aceita conexões da rede local.
+## ✅ Status do projeto
 
-## Pré-requisitos
+- [x] Cadastro, login e sessão persistente
+- [x] CRUD completo de usuários e projetos
+- [x] Favoritos, apoios e comentários
+- [x] Solicitações de colaboração
+- [x] Chat privado após aceite
+- [x] Encerramento bilateral da colaboração
+- [x] XP, níveis e certificados
+- [x] Notificações e moderação
+- [x] API e MySQL hospedados
+- [x] Inicialização simplificada para computadores escolares
+- [x] Compatibilidade com Expo SDK 58
 
-- Node.js 22.13 ou superior (requisito mínimo do Expo SDK 58)
-- npm
-- Expo Go atualizado no celular
-- Internet disponível para acessar a API e o banco hospedados
+## ✨ Funcionalidades
 
-O MySQL local é opcional e serve apenas para desenvolvimento avançado. Na máquina da escola, não é necessário instalar MySQL, copiar `.env` ou conhecer as credenciais do banco.
+### Para diretores e escolas
 
-## Início rápido em outra máquina
+- Criar, consultar, editar e excluir os próprios projetos;
+- selecionar as categorias de ajuda necessárias;
+- acompanhar favoritos, apoios e comentários;
+- receber, aceitar ou recusar solicitações com justificativa;
+- conversar com o colaborador após o aceite;
+- confirmar a conclusão e emitir certificados.
 
-1. Instale o Node.js 22.13 ou mais recente.
-2. Copie ou clone a pasta completa do projeto.
-3. Dê dois cliques em `INICIAR_LEARNHUB.cmd`.
+### Para colaboradores
 
-O iniciador instala as dependências quando necessário, testa a API hospedada e abre o túnel compatível do Expo. Se a rede bloquear o túnel, execute `npm run dev` e conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
+- Explorar e pesquisar projetos publicados;
+- favoritar, apoiar e comentar;
+- enviar solicitações de colaboração por categoria;
+- acompanhar o estado de cada solicitação;
+- usar o chat privado das parcerias aceitas;
+- acumular XP, subir de nível e consultar certificados.
 
-Também é possível usar o terminal:
+### Para administradores
+
+- Visualizar indicadores de usuários, projetos e interações;
+- consultar projetos cadastrados;
+- excluir conteúdo após confirmação;
+- analisar denúncias na fila de moderação;
+- manter o cadastro público protegido contra criação de administradores.
+
+### Recursos gerais
+
+- Tema claro e escuro;
+- perfil editável e exclusão da própria conta;
+- senhas protegidas com hash bcrypt;
+- notificações de solicitações, mensagens e certificados;
+- diagnóstico de API e banco pelo endpoint `/api/health`;
+- funcionamento por túnel ou rede local no Expo Go.
+
+## 🧱 Arquitetura
+
+| Camada | Tecnologia | Responsabilidade |
+|---|---|---|
+| Aplicativo | Expo SDK 58, React Native 0.88 e TypeScript | Interface, navegação e consumo da API |
+| API | Node.js e Express | Regras de negócio, autenticação e endpoints REST |
+| Banco | MySQL | Persistência de usuários, projetos e interações |
+| Autenticação | JWT e bcrypt | Sessões autenticadas e proteção de senhas |
+| Hospedagem | Render e MySQL gerenciado | API e banco disponíveis pela internet |
+
+O aplicativo resolve a API nesta ordem:
+
+1. `EXPO_PUBLIC_API_URL`, quando definida;
+2. `expo.extra.apiUrl` no `app.json`;
+3. endereço do computador detectado pelo Metro em desenvolvimento local;
+4. `http://localhost:3000` na versão web.
+
+## 📁 Estrutura do projeto
+
+```text
+LearnHub/
+├── App.tsx                       # entrada e navegação principal
+├── app.json                      # configuração do Expo e URL hospedada
+├── assets/                       # ícones e imagens do aplicativo
+├── src/
+│   ├── components/               # componentes compartilhados
+│   ├── config/                   # resolução da URL da API
+│   ├── navigation/               # abas, drawer e stacks
+│   ├── screens/                  # telas do aplicativo
+│   ├── services/                 # autenticação e clientes HTTP
+│   └── theme/                    # temas claro e escuro
+├── backend/
+│   ├── scripts/                  # provisionamento administrativo
+│   ├── src/
+│   │   ├── config/               # ambiente, banco e schema
+│   │   ├── controllers/          # entrada das requisições
+│   │   ├── middleware/           # autenticação e erros
+│   │   ├── repositories/         # acesso ao MySQL
+│   │   ├── routes/               # rotas REST
+│   │   └── services/             # regras de negócio
+│   └── tests/                    # testes locais e hospedados
+├── database/database.sql         # estrutura SQL reproduzível
+├── scripts/start.js              # inicializador completo
+├── scripts/diagnose.js           # diagnóstico do ambiente
+└── INICIAR_LEARNHUB.cmd          # atalho para Windows
+```
+
+## 💻 Pré-requisitos
+
+Antes de começar, verifique se você possui:
+
+- **Node.js 22.13 ou superior**;
+- **npm**;
+- **Expo Go atualizado** no celular;
+- conexão com a internet para acessar a API e o banco hospedados.
+
+> O MySQL local é opcional. Para usar o ambiente hospedado, não é necessário instalar banco de dados nem copiar credenciais para a máquina.
+
+## 🚀 Instalação
+
+Clone o repositório e instale as dependências:
 
 ```powershell
+git clone https://github.com/rafaboss1214/LearnHub.git
+cd LearnHub
 npm install
+```
+
+O projeto usa npm workspaces. Um único `npm install` prepara o aplicativo e o backend.
+
+### Início rápido no Windows
+
+Dê dois cliques em:
+
+```text
+INICIAR_LEARNHUB.cmd
+```
+
+Ou execute no Prompt de Comando/PowerShell:
+
+```powershell
 npm start
 ```
 
-`npm start` é o comando oficial. Ele confirma se a API hospedada e o banco estão disponíveis, cria o túnel do Expo, inicia o Metro e valida o manifesto antes de mostrar **LEARNHUB PRONTO**. `npm run escola` continua disponível como alias de compatibilidade.
+O inicializador:
 
-Para uma rede comum, sem túnel:
+1. verifica a API hospedada e a conexão com o banco;
+2. inicia o Metro na porta `8081`;
+3. abre o túnel compatível do Expo;
+4. valida o manifesto público;
+5. exibe o QR Code e a mensagem **LEARNHUB PRONTO**.
+
+Abra o Expo Go e leia o QR Code mostrado no terminal.
+
+### Desenvolvimento em rede local
+
+Com o computador e o celular no mesmo Wi-Fi ou hotspot:
 
 ```powershell
 npm run dev
 ```
 
-## Estrutura relevante
+Se a rede escolar impedir a comunicação entre dispositivos, use `npm start`, que abre o túnel, ou conecte ambos ao mesmo hotspot permitido pela instituição.
 
-```text
-LearnHub/
-├── App.tsx                      # entrada e navegação do aplicativo
-├── src/
-│   ├── config/api.ts            # único local que resolve a URL da API
-│   ├── screens/                 # telas existentes, preservadas
-│   └── services/                # cliente HTTP e autenticação
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── repositories/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── server.js
-│   ├── tests/
-│   ├── .env.example
-│   └── package.json
-├── database/database.sql
-├── scripts/diagnose.js
-└── package.json
-```
+## ⚙️ Ambiente local opcional
 
-## Passo 1 — instalar as dependências
-
-Abra PowerShell ou Prompt de Comando na pasta raiz `LearnHub` e execute:
-
-```powershell
-npm install
-```
-
-O projeto usa npm workspaces. Esse único comando instala as dependências do Expo e do backend.
-
-## Passo 2 — criar um banco SQL local (opcional)
-
-O arquivo [database/database.sql](database/database.sql) cria as tabelas `usuarios`, `projetos`, `projetos_favoritos`, `projetos_apoios` e `comentarios` no banco selecionado. Ele pode ser executado várias vezes com segurança.
-
-Ao iniciar, a API também executa uma migração idempotente: cria somente as tabelas ausentes e preserva os dados existentes. Isso mantém o banco hospedado alinhado com a versão do app.
-
-### Opção A: MySQL Workbench
-
-1. Inicie o serviço MySQL.
-2. Abra o MySQL Workbench e conecte-se ao servidor local.
-3. Abra `database/database.sql`.
-4. Execute todo o script pelo ícone de raio.
-
-### Opção B: phpMyAdmin
-
-1. Abra o phpMyAdmin.
-2. Entre na aba **Importar**.
-3. Escolha `database/database.sql`.
-4. Confirme a importação.
-
-### Opção C: terminal MySQL no Windows
-
-No Prompt de Comando (`cmd.exe`), a partir da raiz do projeto:
-
-```cmd
-mysql -u root -p < database\database.sql
-```
-
-No PowerShell:
-
-```powershell
-Get-Content database/database.sql | mysql -u root -p
-```
-
-Se o usuário `root` não tiver senha, pressione Enter quando solicitado. Se o comando `mysql` não for encontrado, use o caminho completo para `mysql.exe` ou prefira o Workbench/phpMyAdmin.
-
-## Passo 3 — configurar o backend local (opcional)
-
-Copie o exemplo:
+Para trabalhar com uma API e um MySQL locais, copie o arquivo de exemplo:
 
 ```powershell
 Copy-Item backend/.env.example backend/.env
 ```
 
-Abra somente `backend/.env` e ajuste as credenciais do MySQL:
+Configure apenas o arquivo local `backend/.env`:
 
 ```dotenv
 PORT=3000
@@ -144,96 +212,91 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=learnhub
-JWT_SECRET=use-aqui-uma-frase-aleatoria-com-mais-de-32-caracteres
+DB_SSL=false
+DB_SSL_CA_BASE64=
+JWT_SECRET=use-uma-frase-aleatoria-com-pelo-menos-32-caracteres
 CORS_ORIGIN=*
 ```
 
-O arquivo `backend/.env` está no `.gitignore`; não envie senha real ao Git. A API nunca imprime a senha no diagnóstico ou nos erros.
-
-## Passo 4 — iniciar o projeto
-
-Para usar a API e o banco hospedados, use o iniciador completo:
-
-```powershell
-npm start
-```
-
-O iniciador consulta `/api/health`, confirma a conexão do banco, abre o túnel oficial do Expo e valida o manifesto pelo endereço público. Para iniciar diretamente em LAN, use `npm run dev`.
-
-Se quiser desenvolver com banco local, use:
+Importe [database/database.sql](./database/database.sql) pelo MySQL Workbench, phpMyAdmin ou terminal e inicie:
 
 ```powershell
 npm run dev:local
 ```
 
-Nesse modo, o terminal mantém os dois processos visíveis. O backend testa o MySQL antes de começar e mostra:
+> Nunca envie arquivos `.env`, senhas, tokens ou credenciais do banco para o Git. O repositório já ignora essas configurações locais.
 
-```text
-====================================
-API INICIADA COM SUCESSO
-====================================
-Porta: 3000
-Local: http://localhost:3000
-Rede: http://192.168.X.X:3000
-Health: http://192.168.X.X:3000/api/health
-Banco de dados: CONECTADO
-====================================
-```
+## ☕ Comandos
 
-O Expo inicia em LAN e exibe o QR Code. Para usar dois terminais separados:
+| Comando | Descrição |
+|---|---|
+| `npm start` | Verifica a API/banco e inicia o Expo por túnel |
+| `npm run dev` | Inicia o Expo pela rede local usando a API hospedada |
+| `npm run dev:local` | Inicia aplicativo e backend locais |
+| `npm run backend` | Inicia somente a API Express |
+| `npm run app` | Inicia somente o Expo em LAN |
+| `npm run diagnose` | Verifica Node, rede, API, banco e portas |
+| `npm run typecheck` | Valida os tipos TypeScript |
+| `npm run lint` | Executa o ESLint |
+| `npm test` | Executa os testes isolados do backend |
+| `npm run test:auth` | Testa autenticação em um MySQL configurado |
+| `npm run test:hosted` | Testa o CRUD contra a API hospedada |
+| `npm run test:hosted:community` | Testa o fluxo hospedado de colaboração |
+| `npm run admin:create` | Cria uma conta administrativa com variáveis locais |
 
-```powershell
-npm run backend
-```
+`npm run escola`, `npm run start:tunnel` e `npm run dev:tunnel` continuam disponíveis como aliases do modo túnel.
 
-```powershell
-npm run app
-```
+## 🔌 API
 
-## Passo 5 — abrir no Expo Go
+### Autenticação e perfil
 
-1. Deixe o computador e o celular na mesma rede.
-2. Permita o acesso de rede privada quando o Firewall do Windows perguntar sobre Node.js.
-3. Abra o Expo Go no celular.
-4. Leia o QR Code exibido no terminal.
+| Método | Rota | Ação |
+|---|---|---|
+| `POST` | `/api/auth/register` | Cadastra diretor ou colaborador |
+| `POST` | `/api/auth/login` | Autentica e retorna a sessão |
+| `GET` | `/api/auth/me` | Consulta o usuário autenticado |
+| `PUT` | `/api/auth/me` | Atualiza nome, e-mail ou senha |
+| `DELETE` | `/api/auth/me` | Exclui a própria conta |
 
-Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.hostUri`, fornecido pelo Metro no Expo SDK 58, e usa esse mesmo computador na porta `3000`.
+### Projetos e interações
 
-A ordem de resolução é:
+| Método | Rota | Ação |
+|---|---|---|
+| `GET/POST` | `/api/projects` | Lista ou cria projetos |
+| `GET/PUT/DELETE` | `/api/projects/:id` | Consulta, edita ou exclui um projeto |
+| `POST` | `/api/projects/:id/favorite` | Alterna o favorito |
+| `POST` | `/api/projects/:id/support` | Alterna o apoio |
+| `POST` | `/api/projects/:id/comments` | Adiciona comentário |
+| `DELETE` | `/api/projects/comments/:id` | Exclui comentário autorizado |
+| `POST` | `/api/projects/:id/reports` | Envia uma denúncia |
 
-1. `EXPO_PUBLIC_API_URL`, se configurada;
-2. `expo.extra.apiUrl` do `app.json` (API hospedada padrão);
-3. IPv4 do host do Metro/Expo em LAN, somente se não houver API hospedada;
-4. `http://localhost:3000` somente na versão web.
+### Colaborações e comunidade
 
-## Passo 6 — testar o cadastro
+| Método | Rota | Ação |
+|---|---|---|
+| `POST` | `/api/projects/:id/requests` | Solicita colaboração |
+| `GET` | `/api/collaborations` | Lista solicitações enviadas/recebidas |
+| `PUT` | `/api/collaborations/:id` | Aceita ou recusa uma solicitação |
+| `POST` | `/api/collaborations/:id/closure` | Gerencia o encerramento bilateral |
+| `GET/POST` | `/api/collaborations/:id/messages` | Consulta ou envia mensagens |
+| `PUT` | `/api/collaborations/:id/messages/read` | Marca mensagens como lidas |
+| `GET` | `/api/conversations` | Lista conversas disponíveis |
+| `POST` | `/api/collaborations/:id/certificate` | Emite certificado de conclusão |
+| `GET` | `/api/certificates/:code` | Consulta certificado autorizado |
+| `GET` | `/api/progress` | Retorna XP, nível e certificados |
+| `GET` | `/api/notifications` | Retorna notificações e contadores |
 
-1. No Expo Go, toque em **Cadastre-se**.
-2. Preencha nome, e-mail, senha e confirmação.
-3. Escolha **Colaborador** ou **Diretor**.
-4. Toque em **Cadastrar**.
-5. O app deve mostrar **Conta criada com sucesso**.
+### Administração e diagnóstico
 
-O e-mail é normalizado e único. A senha é transformada em hash bcrypt antes de chegar à coluna `senha`.
+| Método | Rota | Ação |
+|---|---|---|
+| `GET` | `/api/health` | Informa o estado da API e do MySQL |
+| `GET` | `/api/admin/dashboard` | Retorna indicadores administrativos |
+| `GET` | `/api/admin/moderation/dashboard` | Retorna indicadores de moderação |
+| `GET` | `/api/admin/moderation/reports` | Lista denúncias para moderação |
+| `PUT` | `/api/admin/moderation/reports/:id` | Atualiza uma denúncia |
 
-## Passo 7 — testar o login
-
-1. Volte à tela de login.
-2. Informe o mesmo e-mail e senha.
-3. Toque em **Acessar Plataforma**.
-4. O app valida as credenciais no MySQL e mantém o redirecionamento original para `Principal`.
-
-Senha errada e usuário inexistente retornam a mesma mensagem amigável: **E-mail ou senha incorretos.**
-
-## Testar `/api/health`
-
-Com o backend ativo, abra no navegador do computador:
-
-```text
-http://localhost:3000/api/health
-```
-
-Resposta esperada:
+Resposta esperada de `/api/health`:
 
 ```json
 {
@@ -243,192 +306,63 @@ Resposta esperada:
 }
 ```
 
-No celular, use a URL de rede impressa pelo backend, por exemplo:
+## 🧪 Qualidade e testes
 
-```text
-http://192.168.0.25:3000/api/health
-```
-
-Se a API estiver online mas o banco estiver indisponível, o endpoint retorna HTTP `503` com `database: "disconnected"`.
-
-## Provar que o cadastro foi salvo no SQL
-
-Execute no MySQL Workbench, phpMyAdmin ou terminal:
-
-```sql
-USE learnhub;
-
-SELECT
-  id,
-  nome,
-  email,
-  tipo_usuario,
-  created_at,
-  CHAR_LENGTH(senha) AS tamanho_do_hash,
-  LEFT(senha, 7) AS inicio_do_hash
-FROM usuarios
-ORDER BY id DESC;
-```
-
-O registro recém-criado deve aparecer. A coluna `senha` terá um hash bcrypt, normalmente iniciado por `$2b$`, e nunca a senha digitada.
-
-## Administração
-
-O administrador entra pela mesma tela de login e recebe a aba **Admin**, com totais de usuários, diretores, projetos, apoios, favoritos, comentários e distribuição por categoria. Pode consultar e excluir qualquer projeto após confirmação. Diretores podem editar e excluir somente os próprios projetos. O cadastro público não permite criar administradores.
-
-Para provisionar uma conta, configure a conexão real em `backend/.env` e as variáveis `ADMIN_EMAIL`, `ADMIN_NAME` e `ADMIN_PASSWORD` em `backend/.env.admin.local` (ou no ambiente do servidor). Execute `npm run admin:create`. O comando cria a conta com hash bcrypt e não modifica uma conta existente. Ambos os arquivos de configuração local são ignorados pelo Git.
-
-Neste computador, `.env.local` contém `LEARNHUB_LOCAL_API=true`: `npm start` inicia o backend atualizado conectado ao MySQL da Aiven, publica a API por Cloudflare e abre o túnel oficial do Expo. O computador e o processo precisam continuar ligados. Para usar a API permanente do Render, publique as alterações do backend lá e remova essa variável local.
-
-## Validação automatizada
-
-Testes locais de validação, descoberta de rede e fluxo HTTP completo com repositório isolado, sem exigir MySQL:
+Antes de enviar alterações, execute:
 
 ```powershell
+npm run typecheck
+npm run lint
 npm test
+npx expo-doctor@latest
 ```
 
-Com MySQL importado e backend em execução, rode em outro terminal:
+A suíte local usa repositórios isolados e não altera o banco hospedado. Os testes `test:hosted` e `test:hosted:community` criam dados temporários na API real e fazem a limpeza ao concluir.
+
+## 🩺 Solução de problemas
+
+### O aplicativo não inicia
 
 ```powershell
-npm run test:auth
-```
-
-O teste real de autenticação cobre:
-
-- `GET /api/health`;
-- cadastro válido (`201`);
-- persistência no MySQL e hash bcrypt;
-- e-mail repetido (`409`);
-- login correto (`200`);
-- senha errada (`401`);
-- usuário inexistente (`401`);
-- sessão autenticada (`GET /api/auth/me`).
-
-Por padrão, o usuário automático é removido ao fim do teste. Para mantê-lo temporariamente no banco e inspecioná-lo:
-
-```powershell
-$env:TEST_KEEP_USER=1; npm run test:auth
-```
-
-## Diagnóstico no computador da escola
-
-Execute:
-
-```powershell
+npm install
 npm run diagnose
-```
-
-O comando verifica e exibe:
-
-- versão do Node.js;
-- presença das dependências do Expo;
-- a API hospedada definida pelo `.env` ou pelo `app.json` e a conexão do banco;
-- presença de `backend/.env`;
-- IPv4 local e adaptador escolhido;
-- porta `3000` livre ou em uso;
-- host, porta, usuário e nome do banco, sem revelar a senha;
-- resposta do MySQL;
-- resposta HTTP de `/api/health`.
-
-Se a porta estiver **em uso** e `/api/health` responder `200`, isso é normal: o backend já está ativo.
-
-## Se aparecer “Não foi possível conectar ao servidor”
-
-Confira nesta ordem:
-
-1. O terminal do backend mostra **Banco de dados: CONECTADO**?
-2. `http://localhost:3000/api/health` funciona no computador?
-3. A URL de rede impressa, como `http://192.168.X.X:3000/api/health`, abre no navegador do celular?
-4. Celular e computador estão na mesma rede, sem VPN ativa?
-5. O Firewall do Windows permitiu Node.js em **redes privadas**?
-6. A rede da escola isola um dispositivo do outro?
-7. Rode `npm run diagnose` e observe IP, porta, MySQL e health.
-
-O erro de rede do `fetch` não é mostrado diretamente ao usuário; o app exibe orientação para verificar backend e rede. As requisições expiram após 10 segundos.
-
-## Firewall e redes escolares
-
-- Quando o Windows solicitar acesso para Node.js, marque **Redes privadas** e permita.
-- Computador e celular precisam conseguir se comunicar diretamente para acessar uma API local por LAN.
-- Algumas redes escolares usam isolamento de clientes: mesmo no mesmo Wi-Fi, o celular não consegue abrir o IP do computador.
-- A alternativa mais simples é conectar computador e celular ao mesmo hotspot pessoal, quando a escola permitir.
-- Outra alternativa é publicar temporariamente a porta `3000` com um túnel HTTP/HTTPS confiável (por exemplo, Cloudflare Tunnel ou ngrok), copiar `.env.example` para `.env.local` e definir a URL pública:
-
-```dotenv
-EXPO_PUBLIC_API_URL=https://url-publica-do-tunel.example
-```
-
-Depois, reinicie/recarregue completamente o Expo Go. Nunca exponha o MySQL diretamente; o túnel deve apontar somente para a API Express na porta `3000`.
-
-## Expo em modo túnel
-
-Se o QR/Metro em LAN for bloqueado:
-
-```powershell
 npm start
 ```
 
-Os comandos abaixo são aliases equivalentes, mantidos para compatibilidade:
+Confirme que está usando Node.js 22.13 ou superior e que o antivírus/firewall não bloqueou o Node.js.
 
-```powershell
-npm run escola
-npm run start:tunnel
-npm run dev:tunnel
-```
+### O QR Code não abre
 
-Esses comandos usam `expo start --tunnel ngrok --go`, com `@expo/ngrok` instalado nas dependências do projeto, para publicar o Metro sem exigir uma conta Expo na máquina. Leia o novo QR Code a cada reinício: o endereço pode mudar. Se o túnel for bloqueado pela rede, use `npm run dev` no mesmo Wi-Fi ou hotspot.
+- Atualize o Expo Go;
+- leia o novo QR Code a cada reinício;
+- tente `npm start` para usar o túnel;
+- como alternativa, conecte celular e computador ao mesmo hotspot e rode `npm run dev`.
 
-O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hospedado já está no `app.json`. Ao combinar `--tunnel --local-api`, o script publica a porta `3000` por um túnel Cloudflare separado, baixado para `tools` quando necessário.
+### Banco de dados indisponível
 
-## Rotas da API
+Abra o endpoint `/api/health`. Quando a API está online, mas o banco não responde, o endpoint retorna HTTP `503` com `database: "disconnected"`. Nesse caso, verifique o serviço MySQL hospedado e reinicie a API após a recuperação.
 
-| Método | Rota | Resultado principal |
-|---|---|---|
-| `GET` | `/api/health` | Estado da API e do MySQL |
-| `POST` | `/api/auth/register` | Cria usuário com hash bcrypt |
-| `POST` | `/api/auth/login` | Valida e-mail/senha e retorna sessão |
-| `GET` | `/api/auth/me` | Retorna o usuário da sessão JWT |
-| `PUT` | `/api/auth/me` | Atualiza nome, e-mail ou senha da sessão |
-| `DELETE` | `/api/auth/me` | Exclui a própria conta |
-| `GET` | `/api/projects` | Lista projetos e contadores |
-| `POST` | `/api/projects` | Cria projeto (diretor) |
-| `GET` | `/api/projects/:id` | Retorna detalhes e comentários |
-| `PUT` | `/api/projects/:id` | Edita projeto (diretor) |
-| `DELETE` | `/api/projects/:id` | Exclui projeto (diretor) |
-| `POST` | `/api/projects/:id/favorite` | Alterna favorito |
-| `POST` | `/api/projects/:id/support` | Alterna apoio |
-| `POST` | `/api/projects/:id/comments` | Adiciona comentário |
-| `DELETE` | `/api/projects/comments/:id` | Exclui comentário autorizado |
-| `POST` | `/api/projects/:id/requests` | Envia uma solicitação de colaboração |
-| `GET` | `/api/collaborations` | Lista solicitações enviadas ou recebidas |
-| `PUT` | `/api/collaborations/:id` | Aceita ou recusa uma solicitação |
-| `POST` | `/api/collaborations/:id/closure` | Solicita, confirma ou recusa o encerramento |
-| `GET/POST` | `/api/collaborations/:id/messages` | Consulta ou envia mensagens privadas |
-| `PUT` | `/api/collaborations/:id/messages/read` | Marca mensagens como lidas |
-| `GET` | `/api/conversations` | Lista conversas liberadas |
-| `POST` | `/api/collaborations/:id/certificate` | Emite certificado após a conclusão |
-| `GET` | `/api/certificates/:code` | Consulta um certificado autorizado |
-| `GET` | `/api/progress` | Retorna XP, nível e certificados |
-| `GET` | `/api/notifications` | Retorna contadores e notificações |
-| `POST` | `/api/projects/:id/reports` | Denuncia um projeto para análise |
-| `GET` | `/api/admin/moderation/reports` | Consulta a fila de moderação |
-| `PUT` | `/api/admin/moderation/reports/:id` | Atualiza uma denúncia em moderação |
+### Porta em uso
 
-## Checklist antes de apresentar
+Se `/api/health` responder normalmente, a API provavelmente já está ativa. Caso contrário, execute `npm run diagnose` para identificar o processo e a porta afetada.
 
-- [ ] Node.js 22.13 ou superior instalado
-- [ ] `npm install` executado
-- [ ] `npm run diagnose` confirma API e banco conectados
-- [ ] `/api/health` funcionando
-- [ ] Expo iniciado
-- [ ] QR Code aparecendo
-- [ ] Celular e PC na mesma rede
-- [ ] Cadastro testado
-- [ ] Usuário apareceu no banco
-- [ ] Login testado
-- [ ] Login redirecionou corretamente
-- [ ] Colaborador enviou uma solicitação
-- [ ] Diretor aceitou e o chat foi liberado
-- [ ] Os dois participantes confirmaram o encerramento
-- [ ] XP e certificado apareceram na progressão
+## 📫 Contribuindo
+
+Para contribuir com o LearnHub:
+
+1. Faça um fork deste repositório;
+2. crie uma branch: `git checkout -b feature/minha-melhoria`;
+3. implemente e valide a alteração;
+4. faça o commit: `git commit -m "feat: minha melhoria"`;
+5. envie a branch: `git push origin feature/minha-melhoria`;
+6. abra um Pull Request descrevendo o que foi alterado.
+
+---
+
+<p align="center">
+  Desenvolvido para aproximar educação, tecnologia e colaboração comunitária.
+</p>
+
+<p align="center">
+  <sub>Estrutura inspirada no <a href="https://github.com/iuricode/readme-template">readme-template</a>.</sub>
+</p>
