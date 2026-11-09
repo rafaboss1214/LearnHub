@@ -6,6 +6,7 @@ const communityRoutes = require("./routes/community-routes");
 const healthRoutes = require("./routes/health-routes");
 const projectRoutes = require("./routes/project-routes");
 const adminRoutes = require("./routes/admin-routes");
+const mediaRoutes = require("./routes/media-routes");
 const { notFound, errorHandler } = require("./middleware/error-handler");
 
 function corsOptions() {
@@ -19,8 +20,9 @@ const app = express();
 
 app.disable("x-powered-by");
 app.use(cors(corsOptions()));
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json({ limit: "4.5mb" }));
 app.use("/api", healthRoutes);
+app.use("/api", mediaRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", communityRoutes);
 app.use("/api/projects", projectRoutes);

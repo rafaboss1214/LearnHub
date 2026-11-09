@@ -107,6 +107,11 @@ export async function issueCertificate(id: number) {
   return result.certificate;
 }
 
+export async function getCertificate(code: string) {
+  const result = await authorized<{ certificate: Certificate }>(`/api/certificates/${encodeURIComponent(code)}`);
+  return result.certificate;
+}
+
 export async function listConversations() {
   const result = await authorized<{ conversations: Conversation[] }>("/api/conversations");
   return result.conversations;

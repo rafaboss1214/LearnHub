@@ -1,8 +1,10 @@
 import { useFeedback } from "../components/Feedback";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,6 +35,10 @@ export default function ProjectFormScreen({ navigation, route }: any) {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [imageBase64, setImageBase64] = useState("");
+  const [imageMime, setImageMime] = useState("");
+  const [removeImage, setRemoveImage] = useState(false);
   const [status, setStatus] = useState<ProjectStatus>("publicado");
   const [supportCategories, setSupportCategories] = useState<string[]>([...SUPPORT_CATEGORIES]);
   const [loading, setLoading] = useState(editing);
@@ -48,6 +54,7 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         setDescription(project.descricao);
         setCategory(project.categoria);
         setImageUrl(project.imagemUrl);
+        setImagePreview(project.imagemUrl);
         setStatus(project.status);
         setSupportCategories(project.supportCategories?.length ? project.supportCategories : [...SUPPORT_CATEGORIES]);
       })
@@ -70,6 +77,9 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         imagemUrl: imageUrl.trim(),
         status,
         supportCategories,
+        imageBase64: imageBase64 || undefined,
+        imageMime: imageMime || undefined,
+        removeImage,
       };
       if (projectId) await updateProject(projectId, payload);
       else await createProject(payload);
@@ -81,6 +91,16 @@ export default function ProjectFormScreen({ navigation, route }: any) {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function pickCover() {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: .8, base64: true });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if ((asset.fileSize || 0) > 3 * 1024 * 1024 || !asset.base64) {
+      return showAlert("Imagem inválida", "Escolha uma imagem JPG, PNG ou WebP de até 3 MB.");
+    }
+    setImagePreview(asset.uri); setImageBase64(asset.base64); setImageMime(asset.mimeType || "image/jpeg"); setImageUrl(""); setRemoveImage(false);
   }
 
   if (loading) {
@@ -144,9 +164,12 @@ export default function ProjectFormScreen({ navigation, route }: any) {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Imagem de capa (opcional)</Text>
+        {!!imagePreview && !removeImage && <Image source={{ uri: imagePreview }} style={styles.coverPreview} />}
+        <View style={styles.imageActions}><TouchableOpacity onPress={() => void pickCover()} style={[styles.imageButton, { borderColor: colors.primary }]}><Ionicons name="images-outline" size={18} color={colors.primary} /><Text style={{ color: colors.primary, fontWeight: "800" }}>Escolher imagem</Text></TouchableOpacity>{!!imagePreview && <TouchableOpacity onPress={() => { setImagePreview(""); setImageBase64(""); setImageMime(""); setImageUrl(""); setRemoveImage(true); }} style={styles.removeImage}><Text style={{ color: colors.danger, fontWeight: "700" }}>Remover</Text></TouchableOpacity>}</View>
+        <Text style={[styles.or, { color: colors.muted }]}>ou use uma URL pública</Text>
         <TextInput
           value={imageUrl}
-          onChangeText={setImageUrl}
+          onChangeText={(value) => { setImageUrl(value); if (value) { setImagePreview(value); setImageBase64(""); setImageMime(""); setRemoveImage(false); } }}
           placeholder="https://exemplo.com/imagem.jpg"
           placeholderTextColor={colors.muted}
           autoCapitalize="none"
@@ -212,6 +235,11 @@ const styles = StyleSheet.create({
   option: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 6 },
   optionText: { fontSize: 12, fontWeight: "700" },
   hint: { fontSize: 12, lineHeight: 17, marginTop: -12, marginBottom: 20 },
+  coverPreview: { width: "100%", aspectRatio: 16 / 9, borderRadius: 18, marginBottom: 10 },
+  imageActions: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
+  imageButton: { minHeight: 44, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, flexDirection: "row", gap: 7, alignItems: "center" },
+  removeImage: { padding: 10 },
+  or: { fontSize: 11, marginBottom: 7 },
   hintAbove: { fontSize: 12, lineHeight: 17, marginTop: -4, marginBottom: 10 },
   statusLabel: { marginTop: 4 },
   statusRow: { flexDirection: "row", gap: 10, marginBottom: 26 },

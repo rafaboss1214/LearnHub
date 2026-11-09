@@ -14,6 +14,15 @@ export class ApiError extends Error {
   }
 }
 
+export function apiAssetUrl(path: string) {
+  if (!path || /^https?:\/\//i.test(path)) return path;
+  try {
+    return `${requireApiUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  } catch {
+    return path;
+  }
+}
+
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   let apiUrl: string;
   try {

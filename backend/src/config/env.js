@@ -44,5 +44,11 @@ module.exports = Object.freeze({
   DB_SSL_CA_BASE64: process.env.DB_SSL_CA_BASE64 || "",
   JWT_SECRET: process.env.JWT_SECRET || "",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
+  SMTP_HOST: process.env.SMTP_HOST || "",
+  SMTP_PORT: positiveInteger(process.env.SMTP_PORT, 587),
+  SMTP_SECURE: boolean(process.env.SMTP_SECURE),
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+  MAIL_FROM: process.env.MAIL_FROM || "",
   databaseEndpoint,
 });

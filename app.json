@@ -42,8 +42,17 @@
       "expo-secure-store",
       "expo-font",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O LearnHub acessa suas fotos para atualizar o perfil e a capa dos projetos.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-web-browser",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-sharing"
     ],
     "experiments": {
       "reactCompiler": true

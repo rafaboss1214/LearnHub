@@ -11,6 +11,8 @@ const PROJECT_SELECT = `
     p.criador_id,
     p.created_at,
     p.updated_at,
+    pm.updated_at AS cover_updated_at,
+    (pm.capa_data IS NOT NULL) AS has_cover,
     u.nome AS criador_nome,
     (SELECT GROUP_CONCAT(pc.categoria ORDER BY pc.categoria SEPARATOR '||')
        FROM projeto_categorias_apoio pc WHERE pc.projeto_id = p.id) AS apoio_categorias,
@@ -26,6 +28,7 @@ const PROJECT_SELECT = `
     ) AS apoiado
   FROM projetos p
   LEFT JOIN usuarios u ON u.id = p.criador_id
+  LEFT JOIN projeto_midias pm ON pm.projeto_id = p.id
 `;
 
 async function list(userId) {
@@ -112,6 +115,18 @@ async function remove(id) {
   return result.affectedRows > 0;
 }
 
+async function saveCover(id, image) {
+  await pool.execute(
+    `INSERT INTO projeto_midias (projeto_id, capa_mime, capa_data) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE capa_mime=VALUES(capa_mime), capa_data=VALUES(capa_data), updated_at=CURRENT_TIMESTAMP`,
+    [id, image.mime, image.data],
+  );
+}
+
+async function removeCover(id) {
+  await pool.execute("DELETE FROM projeto_midias WHERE projeto_id=?", [id]);
+}
+
 async function hasCollaborationHistory(id) {
   const [rows] = await pool.execute(
     "SELECT id FROM solicitacoes_colaboracao WHERE projeto_id = ? LIMIT 1",
@@ -171,6 +186,8 @@ module.exports = {
   create,
   update,
   remove,
+  saveCover,
+  removeCover,
   hasCollaborationHistory,
   toggleRelation,
   createComment,

@@ -52,6 +52,13 @@ function CustomDrawerContent(props: any) {
         })(); } });
   }
 
+  async function trocarConta() {
+    try {
+      await clearSession();
+      props.navigation.getParent()?.reset({ index: 0, routes: [{ name: "Login" }] });
+    } catch (error) { console.error("Erro ao trocar conta:", error); }
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <Feedback value={feedback} onClose={() => setFeedback(null)} />
@@ -62,6 +69,10 @@ function CustomDrawerContent(props: any) {
 
       {/* Botão fixo no rodapé */}
       <View style={[styles.logoutContainer, { borderTopColor: colors.text + "22" }]}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => void trocarConta()}>
+          <Ionicons name="people-outline" size={22} color={colors.primary} />
+          <Text style={[styles.logoutText, { color: colors.primary }]}>Trocar conta</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.logoutButton} onPress={fazerLogout}>
           <Ionicons name="log-out-outline" size={22} color="#ff4d4d" />
           <Text style={styles.logoutText}>Sair da Conta</Text>

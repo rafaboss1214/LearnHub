@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { apiAssetUrl, apiRequest } from "./api";
 import { getAuthToken } from "./auth";
 
 export type ProjectStatus = "publicado" | "concluido";
@@ -16,6 +16,7 @@ export type Project = {
   descricao: string;
   categoria: string;
   imagemUrl: string;
+  imagePath?: string;
   status: ProjectStatus;
   criador: { id: number; nome: string } | null;
   totalFavoritos: number;
@@ -35,7 +36,14 @@ export type ProjectInput = {
   imagemUrl?: string;
   status?: ProjectStatus;
   supportCategories?: string[];
+  imageBase64?: string;
+  imageMime?: string;
+  removeImage?: boolean;
 };
+
+function hydrateProject(project: Project) {
+  return { ...project, imagemUrl: apiAssetUrl(project.imagePath || project.imagemUrl) };
+}
 
 async function authorizedRequest<T>(path: string, options: RequestInit = {}) {
   const token = await getAuthToken();
@@ -48,12 +56,12 @@ async function authorizedRequest<T>(path: string, options: RequestInit = {}) {
 
 export async function listProjects() {
   const result = await authorizedRequest<{ projects: Project[] }>("/api/projects");
-  return result.projects;
+  return result.projects.map(hydrateProject);
 }
 
 export async function getProject(id: number) {
   const result = await authorizedRequest<{ project: Project }>(`/api/projects/${id}`);
-  return result.project;
+  return hydrateProject(result.project);
 }
 
 export async function createProject(input: ProjectInput) {
@@ -61,7 +69,7 @@ export async function createProject(input: ProjectInput) {
     method: "POST",
     body: JSON.stringify(input),
   });
-  return result.project;
+  return hydrateProject(result.project);
 }
 
 export async function updateProject(id: number, input: Partial<ProjectInput>) {
@@ -69,7 +77,7 @@ export async function updateProject(id: number, input: Partial<ProjectInput>) {
     method: "PUT",
     body: JSON.stringify(input),
   });
-  return result.project;
+  return hydrateProject(result.project);
 }
 
 export async function deleteProject(id: number) {

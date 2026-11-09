@@ -1,5 +1,6 @@
 const projectsRepository = require("../repositories/projects-repository");
 const AppError = require("../utils/app-error");
+const { sanitizeImage } = require("./media-service");
 
 const VALID_STATUSES = new Set(["publicado", "concluido"]);
 const VALID_SUPPORT_CATEGORIES = new Set([
@@ -69,7 +70,7 @@ function validateProject(payload, partial = false) {
     result.supportCategories = categories;
   }
 
-  if (partial && !Object.keys(result).length) {
+  if (partial && !Object.keys(result).length && !payload?.imageBase64 && !payload?.removeImage) {
     throw new AppError(400, "Informe ao menos um campo para atualizar.");
   }
   return result;
@@ -103,6 +104,7 @@ function publicProject(row) {
     descricao: row.descricao,
     categoria: row.categoria,
     imagemUrl: row.imagem_url || "",
+    imagePath: row.has_cover ? `/api/media/projects/${row.id}/cover?v=${new Date(row.cover_updated_at || 0).getTime()}` : "",
     status: row.status,
     criador: row.criador_id ? { id: row.criador_id, nome: row.criador_nome } : null,
     totalFavoritos: Number(row.total_favoritos || 0),
@@ -134,7 +136,11 @@ async function create(payload, auth) {
   assertDirector(auth);
   const values = validateProject(payload || {});
   const userId = parseId(auth.sub, "Usuário");
+  const image = payload?.imageBase64
+    ? await sanitizeImage(payload.imageBase64, payload.imageMime, "cover")
+    : null;
   const id = await projectsRepository.create({ ...values, creatorId: userId });
+  if (image) await projectsRepository.saveCover(id, image);
   return getById(id, auth);
 }
 
@@ -144,7 +150,12 @@ async function update(idValue, payload, auth) {
   const project = await getById(id, auth);
   assertOwnership(project, auth);
   const values = validateProject(payload || {}, true);
+  const image = payload?.imageBase64
+    ? await sanitizeImage(payload.imageBase64, payload.imageMime, "cover")
+    : null;
   await projectsRepository.update(id, values);
+  if (image) await projectsRepository.saveCover(id, image);
+  else if (payload?.removeImage) await projectsRepository.removeCover(id);
   return getById(id, auth);
 }
 

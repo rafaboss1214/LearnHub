@@ -372,6 +372,10 @@ async function notifications(auth) {
   if (pending[0].total) items.push({ kind: "request", count: Number(pending[0].total), title: "Solicitações pendentes", detail: "Há novas ofertas para seus projetos." });
   if (unread[0].total) items.push({ kind: "message", count: Number(unread[0].total), title: "Mensagens não lidas", detail: "Abra suas conversas para responder." });
   if (issued[0].total) items.push({ kind: "certificate", count: Number(issued[0].total), title: "Certificados disponíveis", detail: "Consulte seus certificados na progressão." });
+  if (auth?.tipo === "admin") {
+    const [reports] = await pool.execute("SELECT COUNT(*) AS total FROM denuncias_projetos WHERE status IN ('pendente','em_analise')");
+    if (reports[0].total) items.push({ kind: "report", count: Number(reports[0].total), title: "Projetos sinalizados", detail: "Há denúncias aguardando análise da moderação." });
+  }
   return { count: items.reduce((sum, item) => sum + item.count, 0), items };
 }
 

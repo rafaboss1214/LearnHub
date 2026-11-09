@@ -4,12 +4,49 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email VARCHAR(255) NOT NULL,
   senha VARCHAR(255) NOT NULL,
   tipo_usuario ENUM('colaborador', 'diretor', 'admin') NOT NULL DEFAULT 'colaborador',
+  token_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_usuarios_email (email)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS perfis_usuarios (
+  usuario_id INT UNSIGNED NOT NULL,
+  tipo_comunidade ENUM('aluno', 'responsavel', 'comunidade') NULL,
+  descricao VARCHAR(280) NULL,
+  cep CHAR(8) NULL,
+  rua VARCHAR(100) NULL,
+  bairro VARCHAR(100) NULL,
+  cidade VARCHAR(100) NULL,
+  estado CHAR(2) NULL,
+  numero VARCHAR(20) NULL,
+  complemento VARCHAR(120) NULL,
+  habilidades VARCHAR(200) NULL,
+  evidencia_institucional VARCHAR(1000) NULL,
+  status_institucional ENUM('nao_verificada', 'pendente', 'aprovada', 'recusada') NULL,
+  motivo_institucional VARCHAR(1000) NULL,
+  avatar_mime VARCHAR(32) NULL,
+  avatar_data MEDIUMBLOB NULL,
+  avatar_updated_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (usuario_id),
+  CONSTRAINT fk_perfil_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tokens_recuperacao_senha (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_id INT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  used_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_recuperacao_hash (token_hash),
+  KEY idx_recuperacao_usuario (usuario_id, created_at),
+  CONSTRAINT fk_recuperacao_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS projetos (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -26,6 +63,15 @@ CREATE TABLE IF NOT EXISTS projetos (
   KEY idx_projetos_criador (criador_id),
   CONSTRAINT fk_projetos_criador
     FOREIGN KEY (criador_id) REFERENCES usuarios (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS projeto_midias (
+  projeto_id INT UNSIGNED NOT NULL,
+  capa_mime VARCHAR(32) NOT NULL,
+  capa_data MEDIUMBLOB NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (projeto_id),
+  CONSTRAINT fk_midia_projeto FOREIGN KEY (projeto_id) REFERENCES projetos (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS projetos_favoritos (

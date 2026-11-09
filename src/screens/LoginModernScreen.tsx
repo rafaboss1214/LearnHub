@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { getCurrentUser, login } from "../services/auth";
+import { getCurrentUser, getRememberedAccounts, login, RememberedAccount, removeRememberedAccount } from "../services/auth";
 import { warmUpApi } from "../services/api";
 import { ThemeContext } from "../theme/ThemeContext";
 
@@ -26,9 +26,11 @@ export default function LoginModernScreen({ navigation }: any) {
   const [checkingSession, setCheckingSession] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [accounts, setAccounts] = useState<RememberedAccount[]>([]);
 
   useEffect(() => {
     void warmUpApi();
+    void getRememberedAccounts().then(setAccounts);
     getCurrentUser()
       .then((user) => { if (user) navigation.replace("Principal"); })
       .catch(() => showAlert("Sessão indisponível", "Entre novamente para continuar."))
@@ -73,6 +75,8 @@ export default function LoginModernScreen({ navigation }: any) {
             <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="voce@exemplo.com" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.text }]} />
           </View>
 
+          <TouchableOpacity onPress={() => navigation.navigate("RecuperarSenha")} style={styles.forgot}><Text style={{ color: colors.primary, fontWeight: "800", fontSize: 12 }}>Esqueci minha senha</Text></TouchableOpacity>
+
           <Text style={[styles.label, { color: colors.text }]}>Senha</Text>
           <View style={[styles.inputBox, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Ionicons name="lock-closed-outline" size={20} color={colors.muted} />
@@ -84,6 +88,8 @@ export default function LoginModernScreen({ navigation }: any) {
             {submitting ? <ActivityIndicator color="#FFFFFF" /> : <><Text style={styles.buttonText}>Entrar</Text><Ionicons name="arrow-forward" size={19} color="#FFFFFF" /></>}
           </TouchableOpacity>
         </View>
+
+        {!!accounts.length && <View style={[styles.accounts, { backgroundColor: colors.card, borderColor: colors.border }]}><Text style={[styles.accountsTitle, { color: colors.text }]}>Contas usadas neste aparelho</Text>{accounts.map((account) => <View key={account.email} style={styles.accountRow}><TouchableOpacity style={styles.accountMain} onPress={() => { setEmail(account.email); setPassword(""); }}><View style={[styles.accountAvatar, { backgroundColor: colors.primarySoft }]}><Text style={{ color: colors.primary, fontWeight: "900" }}>{account.nome.charAt(0).toUpperCase()}</Text></View><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontWeight: "800" }}>{account.nome}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{account.email}</Text></View></TouchableOpacity><TouchableOpacity accessibilityLabel={`Remover ${account.nome}`} onPress={() => void removeRememberedAccount(account.email).then(() => setAccounts((current) => current.filter((item) => item.email !== account.email)))} style={styles.removeAccount}><Ionicons name="close" size={18} color={colors.muted} /></TouchableOpacity></View>)}</View>}
 
         <TouchableOpacity onPress={() => navigation.navigate("Cadastro")} style={styles.registerLink}>
           <Text style={[styles.registerText, { color: colors.muted }]}>Ainda não tem uma conta? <Text style={{ color: colors.primary, fontWeight: "800" }}>Cadastre-se</Text></Text>
@@ -108,6 +114,13 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: 54, paddingVertical: 14, fontSize: 15 },
   button: { minHeight: 57, borderRadius: 17, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, marginTop: 7 },
   buttonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
+  forgot: { alignSelf: "flex-end", paddingVertical: 2, marginTop: -7, marginBottom: 12 },
+  accounts: { borderWidth: 1, borderRadius: 22, padding: 16, marginTop: 14 },
+  accountsTitle: { fontSize: 13, fontWeight: "900", marginBottom: 8 },
+  accountRow: { flexDirection: "row", alignItems: "center" },
+  accountMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 },
+  accountAvatar: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  removeAccount: { padding: 10 },
   registerLink: { padding: 18, alignItems: "center" },
   registerText: { fontSize: 13 },
 });

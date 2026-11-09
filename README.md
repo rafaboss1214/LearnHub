@@ -50,6 +50,10 @@ MySQL hospedado
 - [x] Encerramento bilateral da colaboração
 - [x] XP, níveis e certificados
 - [x] Notificações e moderação
+- [x] Perfil completo, endereço privado e fotos processadas
+- [x] Recuperação de senha por código de uso único
+- [x] Certificados exportáveis em PDF
+- [x] Troca rápida entre contas usadas no aparelho
 - [x] API e MySQL hospedados
 - [x] Inicialização simplificada para computadores escolares
 - [x] Compatibilidade com Expo SDK 58
@@ -86,6 +90,10 @@ MySQL hospedado
 
 - Tema claro e escuro;
 - perfil editável e exclusão da própria conta;
+- foto de perfil e capa de projeto com remoção de metadados;
+- preenchimento de endereço por CEP, com edição manual disponível;
+- recuperação de senha por e-mail quando o SMTP está configurado;
+- certificado detalhado, impressão e compartilhamento em PDF;
 - senhas protegidas com hash bcrypt;
 - notificações de solicitações, mensagens e certificados;
 - diagnóstico de API e banco pelo endpoint `/api/health`;
@@ -216,7 +224,15 @@ DB_SSL=false
 DB_SSL_CA_BASE64=
 JWT_SECRET=use-uma-frase-aleatoria-com-pelo-menos-32-caracteres
 CORS_ORIGIN=*
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+MAIL_FROM=
 ```
+
+Para ativar a recuperação de senha, preencha as variáveis SMTP. Sem elas, login, cadastro e alteração autenticada de perfil continuam funcionando; somente o envio do código por e-mail permanece indisponível.
 
 Importe [database/database.sql](./database/database.sql) pelo MySQL Workbench, phpMyAdmin ou terminal e inicie:
 
@@ -254,9 +270,12 @@ npm run dev:local
 |---|---|---|
 | `POST` | `/api/auth/register` | Cadastra diretor ou colaborador |
 | `POST` | `/api/auth/login` | Autentica e retorna a sessão |
+| `POST` | `/api/auth/request-reset` | Envia o código de recuperação por e-mail |
+| `POST` | `/api/auth/reset` | Valida o código e redefine a senha |
 | `GET` | `/api/auth/me` | Consulta o usuário autenticado |
 | `PUT` | `/api/auth/me` | Atualiza nome, e-mail ou senha |
 | `DELETE` | `/api/auth/me` | Exclui a própria conta |
+| `POST` | `/api/auth/institution` | Solicita o selo institucional opcional |
 
 ### Projetos e interações
 

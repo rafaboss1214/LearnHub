@@ -29,4 +29,28 @@ async function deleteMe(request, response) {
   return response.status(204).end();
 }
 
-module.exports = { register, login, me, updateMe, deleteMe };
+async function requestPasswordReset(request, response) {
+  const result = await authService.requestPasswordReset(request.body);
+  return response.status(200).json({ success: true, ...result });
+}
+
+async function resetPassword(request, response) {
+  const result = await authService.resetPassword(request.body);
+  return response.status(200).json({ success: true, ...result });
+}
+
+async function requestInstitutionReview(request, response) {
+  const user = await authService.requestInstitutionReview(request.auth.sub, request.body);
+  return response.status(200).json({ success: true, user });
+}
+
+module.exports = {
+  register,
+  login,
+  me,
+  updateMe,
+  deleteMe,
+  requestPasswordReset,
+  resetPassword,
+  requestInstitutionReview,
+};

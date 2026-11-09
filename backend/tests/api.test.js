@@ -200,7 +200,7 @@ test("fluxo HTTP completo de cadastro e login", async () => {
 
     const duplicate = await api(baseUrl, "/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ nome: "Duplicado", email, senha, tipo: "colaborador" }),
+      body: JSON.stringify({ nome: "Duplicado", email, senha, tipo: "colaborador", communityType: "aluno" }),
     });
     assert.equal(duplicate.status, 409);
 

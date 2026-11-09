@@ -11,6 +11,9 @@ async function requireAuth(request, _response, next) {
     request.auth = jwt.verify(token, env.JWT_SECRET);
     const user = await usersRepository.findById(request.auth.sub);
     if (!user) return next(new AppError(401, "Sessão inválida ou expirada."));
+    if (Number(request.auth.ver || 0) !== Number(user.token_version || 0)) {
+      return next(new AppError(401, "Sessão inválida ou expirada."));
+    }
     request.auth.tipo = user.tipo_usuario;
     return next();
   } catch (error) {

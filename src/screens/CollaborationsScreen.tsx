@@ -18,6 +18,7 @@ export default function CollaborationsScreen({ navigation }: any) {
   const [error, setError] = useState("");
   const [rejecting, setRejecting] = useState<Collaboration | null>(null);
   const [reason, setReason] = useState("");
+  const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -29,7 +30,10 @@ export default function CollaborationsScreen({ navigation }: any) {
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  const visible = useMemo(() => filter === "todas" ? rows : rows.filter((row) => row.status === filter), [filter, rows]);
+  const visible = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase("pt-BR");
+    return rows.filter((row) => (filter === "todas" || row.status === filter) && (!term || [row.project.title, row.school.name, row.supporter.name, row.category].some((value) => value.toLocaleLowerCase("pt-BR").includes(term))));
+  }, [filter, query, rows]);
 
   async function act(id: number, action: () => Promise<unknown>) {
     setBusy(id);
@@ -52,10 +56,12 @@ export default function CollaborationsScreen({ navigation }: any) {
         <Text style={[styles.eyebrow, { color: colors.primary }]}>COLABORAÇÕES</Text>
         <Text style={[styles.title, { color: colors.text }]}>Solicitações</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>{user?.tipo === "colaborador" ? "Acompanhe suas ofertas de ajuda." : "Analise as ofertas recebidas nos seus projetos."}</Text>
+        <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}><Ionicons name="search-outline" size={19} color={colors.muted} /><TextInput value={query} onChangeText={setQuery} placeholder="Buscar projeto, pessoa ou categoria" placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, minHeight: 46 }} /></View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
           {(["todas", "pendente", "aceita", "recusada", "concluida"] as const).map((item) => {
             const selected = filter === item;
-            return <TouchableOpacity key={item} onPress={() => setFilter(item)} style={[styles.filter, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primarySoft : colors.card }]}><Text style={{ color: selected ? colors.primary : colors.muted, fontWeight: "800" }}>{item === "todas" ? "Todas" : labels[item]}</Text></TouchableOpacity>;
+            const count = item === "todas" ? rows.length : rows.filter((row) => row.status === item).length;
+            return <TouchableOpacity key={item} onPress={() => setFilter(item)} style={[styles.filter, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primarySoft : colors.card }]}><Text style={{ color: selected ? colors.primary : colors.muted, fontWeight: "800" }}>{item === "todas" ? "Todas" : labels[item]} · {count}</Text></TouchableOpacity>;
           })}
         </ScrollView>
 
@@ -89,4 +95,4 @@ export default function CollaborationsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({ page: { flex: 1 }, content: { padding: 20, paddingBottom: 44 }, eyebrow: { fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }, title: { fontSize: 32, fontWeight: "900", marginTop: 4 }, subtitle: { fontSize: 14, lineHeight: 20, marginTop: 5 }, filters: { gap: 8, paddingVertical: 18 }, filter: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9 }, card: { borderWidth: 1, borderRadius: 22, padding: 17, marginBottom: 14 }, cardTop: { flexDirection: "row", gap: 12, alignItems: "flex-start" }, cardTitle: { fontSize: 18, fontWeight: "900" }, person: { fontSize: 12, marginTop: 3 }, badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 6 }, category: { fontSize: 11, fontWeight: "900", marginTop: 14 }, description: { fontSize: 14, lineHeight: 21, marginTop: 7 }, meta: { fontSize: 12, marginTop: 9 }, rejection: { fontSize: 12, lineHeight: 18, marginTop: 8 }, notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 8 }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 15 }, primary: { minHeight: 42, borderRadius: 13, paddingHorizontal: 14, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" }, outline: { minHeight: 42, borderRadius: 13, borderWidth: 1, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" }, white: { color: "#fff", fontWeight: "800" }, certificate: { minHeight: 42, flexDirection: "row", alignItems: "center", gap: 6 }, empty: { borderWidth: 1, borderRadius: 24, padding: 32, alignItems: "center" }, emptyTitle: { fontSize: 18, fontWeight: "900", marginTop: 10 }, emptyText: { fontSize: 13, marginTop: 5 }, error: { marginBottom: 14, fontSize: 13 }, modalBackdrop: { flex: 1, backgroundColor: "#0009", alignItems: "center", justifyContent: "center", padding: 22 }, modal: { width: "100%", borderRadius: 24, padding: 20 }, modalTitle: { fontSize: 20, fontWeight: "900" }, modalInput: { minHeight: 120, borderWidth: 1, borderRadius: 15, padding: 13, textAlignVertical: "top", marginTop: 14 } });
+const styles = StyleSheet.create({ page: { flex: 1 }, content: { padding: 20, paddingBottom: 44 }, eyebrow: { fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }, title: { fontSize: 32, fontWeight: "900", marginTop: 4 }, subtitle: { fontSize: 14, lineHeight: 20, marginTop: 5 }, search: { borderWidth: 1, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 13, marginTop: 16 }, filters: { gap: 8, paddingVertical: 14 }, filter: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9 }, card: { borderWidth: 1, borderRadius: 22, padding: 17, marginBottom: 14 }, cardTop: { flexDirection: "row", gap: 12, alignItems: "flex-start" }, cardTitle: { fontSize: 18, fontWeight: "900" }, person: { fontSize: 12, marginTop: 3 }, badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 6 }, category: { fontSize: 11, fontWeight: "900", marginTop: 14 }, description: { fontSize: 14, lineHeight: 21, marginTop: 7 }, meta: { fontSize: 12, marginTop: 9 }, rejection: { fontSize: 12, lineHeight: 18, marginTop: 8 }, notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 8 }, actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 15 }, primary: { minHeight: 42, borderRadius: 13, paddingHorizontal: 14, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" }, outline: { minHeight: 42, borderRadius: 13, borderWidth: 1, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" }, white: { color: "#fff", fontWeight: "800" }, certificate: { minHeight: 42, flexDirection: "row", alignItems: "center", gap: 6 }, empty: { borderWidth: 1, borderRadius: 24, padding: 32, alignItems: "center" }, emptyTitle: { fontSize: 18, fontWeight: "900", marginTop: 10 }, emptyText: { fontSize: 13, marginTop: 5 }, error: { marginBottom: 14, fontSize: 13 }, modalBackdrop: { flex: 1, backgroundColor: "#0009", alignItems: "center", justifyContent: "center", padding: 22 }, modal: { width: "100%", borderRadius: 24, padding: 20 }, modalTitle: { fontSize: 20, fontWeight: "900" }, modalInput: { minHeight: 120, borderWidth: 1, borderRadius: 15, padding: 13, textAlignVertical: "top", marginTop: 14 } });
