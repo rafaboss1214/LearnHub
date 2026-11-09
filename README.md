@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/images/icon.png" width="120" alt="Ícone do LearnHub">
+  <img src="./assets/images/learnhub-logo.png" width="420" alt="Logo do LearnHub">
 </p>
 
 <h1 align="center">LearnHub</h1>
