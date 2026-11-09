@@ -25,7 +25,7 @@ Expo Go → API Express hospedada → MySQL hospedado
 
 ## Pré-requisitos
 
-- Node.js 22.13 ou superior (requisito mínimo do Expo SDK 57)
+- Node.js 22.13 ou superior (requisito mínimo do Expo SDK 58)
 - npm
 - Expo Go atualizado no celular
 - Internet disponível para acessar a API e o banco hospedados
@@ -38,7 +38,7 @@ O MySQL local é opcional e serve apenas para desenvolvimento avançado. Na máq
 2. Copie ou clone a pasta completa do projeto.
 3. Dê dois cliques em `INICIAR_LEARNHUB.cmd`.
 
-O iniciador instala as dependências quando necessário, testa a API hospedada e abre o túnel oficial do Expo. Se a rede bloquear o túnel, execute `npm run dev` e conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
+O iniciador instala as dependências quando necessário, testa a API hospedada e abre o túnel compatível do Expo. Se a rede bloquear o túnel, execute `npm run dev` e conecte o computador e o celular ao mesmo Wi-Fi ou hotspot.
 
 Também é possível usar o terminal:
 
@@ -197,7 +197,7 @@ npm run app
 3. Abra o Expo Go no celular.
 4. Leia o QR Code exibido no terminal.
 
-Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.hostUri`, fornecido pelo Metro no Expo SDK 57, e usa esse mesmo computador na porta `3000`.
+Não há IP fixo no app. Em LAN, `src/config/api.ts` lê `Constants.expoConfig.hostUri`, fornecido pelo Metro no Expo SDK 58, e usa esse mesmo computador na porta `3000`.
 
 A ordem de resolução é:
 
@@ -377,7 +377,7 @@ npm run start:tunnel
 npm run dev:tunnel
 ```
 
-Esses comandos usam `expo start --tunnel --go`, com `@expo/ngrok` instalado nas dependências do projeto, para publicar o Metro. Leia o novo QR Code a cada reinício: o endereço pode mudar. Se o túnel for bloqueado pela rede, use `npm run dev` no mesmo Wi-Fi ou hotspot.
+Esses comandos usam `expo start --tunnel ngrok --go`, com `@expo/ngrok` instalado nas dependências do projeto, para publicar o Metro sem exigir uma conta Expo na máquina. Leia o novo QR Code a cada reinício: o endereço pode mudar. Se o túnel for bloqueado pela rede, use `npm run dev` no mesmo Wi-Fi ou hotspot.
 
 O túnel do Metro não precisa publicar o banco nem a API, pois o endereço hospedado já está no `app.json`. Ao combinar `--tunnel --local-api`, o script publica a porta `3000` por um túnel Cloudflare separado, baixado para `tools` quando necessário.
 

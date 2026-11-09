@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useContext, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, type ScrollViewInstance } from "react-native";
 import { AuthUser, getCurrentUser } from "../services/auth";
 import { ChatMessage, Conversation, listConversations, listMessages, markMessagesRead, sendMessage, updateClosure } from "../services/community";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -16,7 +16,7 @@ export default function ChatScreen({ route }: any) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const selectedRequestId = selected?.request.id;
   const routeRequestId = Number(route.params?.requestId || 0);
 

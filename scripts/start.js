@@ -271,14 +271,15 @@ async function main() {
     publicApiUrl = preferredAddress ? `http://${preferredAddress}:3000` : "http://127.0.0.1:3000";
   }
 
-  const expoArguments = [
-    expoCli,
-    "start",
-    effectiveTunnel ? "--tunnel" : "--offline",
-    "--go",
-    "--port",
-    String(metroPort),
-  ];
+  const expoArguments = [expoCli, "start"];
+  if (effectiveTunnel) {
+    // No SDK 58, o provedor padrao passou a exigir login na Expo.
+    // O ngrok legado continua suportado e facilita o uso em computadores escolares.
+    expoArguments.push("--tunnel", "ngrok");
+  } else {
+    expoArguments.push("--offline");
+  }
+  expoArguments.push("--go", "--port", String(metroPort));
   console.log(
     `[Expo] Iniciando na porta ${metroPort} (${effectiveTunnel ? "túnel público" : "rede local"}).`,
   );
