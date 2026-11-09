@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 
-const baseUrl = process.argv[2];
+const baseUrl = process.argv[2] || process.env.LEARNHUB_API_URL || require("../../app.json").expo.extra.apiUrl;
 if (!baseUrl?.startsWith("http")) {
   console.error("Uso: node backend/tests/hosted-community.integration.js https://api.example.com");
   process.exit(1);
@@ -30,7 +30,8 @@ async function api(path, { token = "", ...options } = {}) {
 }
 
 async function registerAndLogin(nome, email, tipo) {
-  assert.equal((await api("/api/auth/register", { method: "POST", body: JSON.stringify({ nome, email, senha: password, tipo }) })).status, 201);
+  const payload = { nome, email, senha: password, tipo, ...(tipo === "colaborador" ? { communityType: "comunidade" } : {}) };
+  assert.equal((await api("/api/auth/register", { method: "POST", body: JSON.stringify(payload) })).status, 201);
   const login = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email, senha: password }) });
   assert.equal(login.status, 200);
   return login.body.token;
