@@ -5,6 +5,7 @@ const DEMO_EMAILS = [
   "diretor.apresentacao.13112026@learnhub.app",
   "colaborador.apresentacao.13112026@learnhub.app",
 ];
+let presentationResetReady = false;
 
 const CONTENT_TABLES = [
   "denuncias_projetos",
@@ -37,6 +38,7 @@ async function resetPresentationDataOnce(database = pool) {
 
     if (!marker.affectedRows) {
       await connection.commit();
+      presentationResetReady = true;
       return { applied: false };
     }
 
@@ -83,6 +85,7 @@ async function resetPresentationDataOnce(database = pool) {
     );
 
     await connection.commit();
+    presentationResetReady = true;
     console.log("Limpeza única da apresentação aplicada com sucesso.");
     return { applied: true };
   } catch (error) {
@@ -93,4 +96,14 @@ async function resetPresentationDataOnce(database = pool) {
   }
 }
 
-module.exports = { CONTENT_TABLES, DEMO_EMAILS, RESET_ID, resetPresentationDataOnce };
+function isPresentationResetReady() {
+  return presentationResetReady;
+}
+
+module.exports = {
+  CONTENT_TABLES,
+  DEMO_EMAILS,
+  RESET_ID,
+  isPresentationResetReady,
+  resetPresentationDataOnce,
+};
