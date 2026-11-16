@@ -44,11 +44,11 @@ MySQL hospedado
 
 - [x] Cadastro, login e sessão persistente
 - [x] CRUD completo de usuários e projetos
-- [x] Favoritos, apoios e comentários
+- [x] Aba de favoritos, apoios, comentários e filtros avançados
 - [x] Solicitações de colaboração
 - [x] Chat privado após aceite
 - [x] Encerramento bilateral da colaboração
-- [x] XP, níveis, missões e selos de conquista
+- [x] XP, níveis, missões e selos específicos para escola e colaborador
 - [x] Notificações e moderação
 - [x] Perfil completo e fotos processadas
 - [x] Recuperação de senha por código de uso único
@@ -64,18 +64,21 @@ MySQL hospedado
 - Criar, consultar, editar e excluir os próprios projetos;
 - selecionar as categorias de ajuda necessárias;
 - acompanhar favoritos, apoios e comentários;
+- acompanhar no dashboard somente os indicadores dos projetos da própria escola;
+- evoluir com missões e conquistas próprias da jornada escolar;
 - receber, aceitar ou recusar solicitações com justificativa;
 - conversar com o colaborador após o aceite;
 - confirmar a conclusão da colaboração.
 
 ### Para colaboradores
 
-- Explorar e pesquisar projetos publicados;
-- favoritar, apoiar e comentar;
+- explorar projetos por situação, categoria, colaboração e ordenação;
+- favoritar projetos e consultá-los em uma aba exclusiva;
+- apoiar e comentar;
 - enviar solicitações de colaboração por categoria;
 - acompanhar o estado de cada solicitação;
 - usar o chat privado das parcerias aceitas;
-- acumular XP, subir de nível, cumprir missões e desbloquear selos.
+- acumular XP, subir de nível e desbloquear missões e selos próprios do colaborador.
 
 ### Para administradores
 

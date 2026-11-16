@@ -14,14 +14,24 @@ const REPORT_REASONS = new Set([
   "Informações impróprias",
   "Outro",
 ]);
-const LEVELS = Object.freeze([
-  { xp: 0, title: "Iniciante" },
+const COLLABORATOR_LEVELS = Object.freeze([
+  { xp: 0, title: "Voluntário iniciante" },
   { xp: 20, title: "Apoiador" },
   { xp: 60, title: "Parceiro" },
   { xp: 120, title: "Mobilizador" },
   { xp: 200, title: "Agente de mudança" },
-  { xp: 300, title: "Mentor" },
+  { xp: 300, title: "Mentor comunitário" },
   { xp: 450, title: "Herói local" },
+  { xp: 650, title: "Lenda LearnHub" },
+]);
+const SCHOOL_LEVELS = Object.freeze([
+  { xp: 0, title: "Escola iniciante" },
+  { xp: 20, title: "Escola ativa" },
+  { xp: 60, title: "Escola parceira" },
+  { xp: 120, title: "Escola mobilizadora" },
+  { xp: 200, title: "Polo de impacto" },
+  { xp: 300, title: "Referência comunitária" },
+  { xp: 450, title: "Escola transformadora" },
   { xp: 650, title: "Lenda LearnHub" },
 ]);
 
@@ -334,27 +344,35 @@ function calculateStreak(activityDates) {
 }
 
 function buildProgress({ xp, completed, collaborations, active, messages, projects, streak, userType }) {
-  const levelIndex = Math.max(0, LEVELS.findLastIndex((item) => xp >= item.xp));
+  const isSchool = userType === "diretor" || userType === "admin";
+  const levels = isSchool ? SCHOOL_LEVELS : COLLABORATOR_LEVELS;
+  const levelIndex = Math.max(0, levels.findLastIndex((item) => xp >= item.xp));
   const level = levelIndex + 1;
-  const currentLevel = LEVELS[levelIndex];
-  const nextLevel = LEVELS[levelIndex + 1] || null;
+  const currentLevel = levels[levelIndex];
+  const nextLevel = levels[levelIndex + 1] || null;
   const nextLevelXp = nextLevel?.xp || xp;
   const levelSpan = nextLevel ? nextLevel.xp - currentLevel.xp : 0;
   const xpInLevel = xp - currentLevel.xp;
   const progressPercent = nextLevel ? Math.min(100, Math.round((xpInLevel / levelSpan) * 100)) : 100;
   const partnershipCount = active + completed;
-  const roleAchievement = userType === "diretor"
-    ? { id: "impact_creator", title: "Criador de impacto", description: "Publicou o primeiro projeto.", icon: "bulb", color: "#FFB020", current: projects, target: 1 }
-    : { id: "active_supporter", title: "Colaborador ativo", description: "Participou de três oportunidades.", icon: "hand-left", color: "#FFB020", current: collaborations, target: 3 };
-  const definitions = [
-    { id: "first_step", title: "Primeiro passo", description: "Entrou em uma colaboração.", icon: "footsteps", color: "#7C5CFC", current: collaborations, target: 1 },
-    { id: "partnership", title: "Parceria formada", description: "Teve uma proposta aceita.", icon: "people", color: "#4F8CFF", current: partnershipCount, target: 1 },
-    { id: "mission_complete", title: "Missão cumprida", description: "Concluiu uma colaboração.", icon: "checkmark-circle", color: "#22B573", current: completed, target: 1 },
-    { id: "teamwork", title: "Trabalho em equipe", description: "Concluiu três colaborações.", icon: "ribbon", color: "#A45CF6", current: completed, target: 3 },
-    { id: "community_hero", title: "Herói da comunidade", description: "Concluiu cinco colaborações.", icon: "shield-checkmark", color: "#F05D5E", current: completed, target: 5 },
-    { id: "good_conversation", title: "Boa conversa", description: "Enviou cinco mensagens.", icon: "chatbubbles", color: "#15AABF", current: messages, target: 5 },
-    { id: "communicator", title: "Comunicador", description: "Enviou 25 mensagens.", icon: "megaphone", color: "#FF7A45", current: messages, target: 25 },
-    roleAchievement,
+  const definitions = isSchool ? [
+    { id: "school_first_project", title: "Primeira iniciativa", description: "Publicou o primeiro projeto da escola.", icon: "bulb", color: "#FFB020", current: projects, target: 1 },
+    { id: "school_portfolio", title: "Portfólio de impacto", description: "Publicou três projetos para a comunidade.", icon: "albums", color: "#7C5CFC", current: projects, target: 3 },
+    { id: "school_open_doors", title: "Portas abertas", description: "Recebeu a primeira proposta de colaboração.", icon: "mail-open", color: "#4F8CFF", current: collaborations, target: 1 },
+    { id: "school_partnership", title: "Escola parceira", description: "Formou a primeira parceria.", icon: "people", color: "#A45CF6", current: partnershipCount, target: 1 },
+    { id: "school_first_impact", title: "Impacto comprovado", description: "Concluiu a primeira colaboração.", icon: "checkmark-circle", color: "#22B573", current: completed, target: 1 },
+    { id: "school_network", title: "Rede que transforma", description: "Concluiu três colaborações.", icon: "git-network", color: "#F05D5E", current: completed, target: 3 },
+    { id: "school_dialogue", title: "Gestão próxima", description: "Enviou dez mensagens de organização.", icon: "chatbubbles", color: "#15AABF", current: messages, target: 10 },
+    { id: "school_consistency", title: "Presença constante", description: "Manteve três dias de atividade.", icon: "calendar", color: "#FF7A45", current: streak, target: 3 },
+  ] : [
+    { id: "supporter_first_proposal", title: "Quero ajudar", description: "Enviou a primeira proposta de colaboração.", icon: "hand-left", color: "#FFB020", current: collaborations, target: 1 },
+    { id: "supporter_partnership", title: "Parceria formada", description: "Teve uma proposta aceita por uma escola.", icon: "people", color: "#4F8CFF", current: partnershipCount, target: 1 },
+    { id: "supporter_first_impact", title: "Missão cumprida", description: "Concluiu a primeira colaboração.", icon: "checkmark-circle", color: "#22B573", current: completed, target: 1 },
+    { id: "supporter_teamwork", title: "Mão na massa", description: "Concluiu três colaborações.", icon: "construct", color: "#A45CF6", current: completed, target: 3 },
+    { id: "supporter_community_hero", title: "Herói da comunidade", description: "Concluiu cinco colaborações.", icon: "shield-checkmark", color: "#F05D5E", current: completed, target: 5 },
+    { id: "supporter_conversation", title: "Boa conversa", description: "Enviou cinco mensagens.", icon: "chatbubbles", color: "#15AABF", current: messages, target: 5 },
+    { id: "supporter_communicator", title: "Comunicador", description: "Enviou 25 mensagens.", icon: "megaphone", color: "#FF7A45", current: messages, target: 25 },
+    { id: "supporter_consistency", title: "Sempre presente", description: "Manteve três dias de atividade.", icon: "flame", color: "#7C5CFC", current: streak, target: 3 },
   ];
   const achievements = definitions.map((item) => ({
     ...item,
@@ -362,10 +380,23 @@ function buildProgress({ xp, completed, collaborations, active, messages, projec
     progress: Math.min(item.current, item.target),
   }));
   const completionTarget = nextMilestone(completed, [1, 3, 5, 10, 20]);
-  const messageTarget = nextMilestone(messages, [1, 5, 15, 30, 60]);
-  const roleValue = userType === "diretor" ? projects : collaborations;
-  const roleTarget = nextMilestone(roleValue, [1, 3, 5, 10]);
+  const messageTarget = nextMilestone(messages, isSchool ? [5, 10, 25, 50] : [5, 15, 30, 60]);
+  const collaborationTarget = nextMilestone(collaborations, [1, 3, 5, 10, 20]);
+  const partnershipTarget = nextMilestone(partnershipCount, [1, 3, 5, 10, 20]);
+  const projectTarget = nextMilestone(projects, [1, 3, 5, 10, 20]);
+  const missions = isSchool ? [
+    { id: "school_publish", title: "Publicar oportunidades", detail: "Crie projetos claros para mobilizar novos colaboradores.", icon: "bulb", current: projects, target: projectTarget, reward: "+10 XP por projeto" },
+    { id: "school_partner", title: "Formar parcerias", detail: "Analise as propostas e conecte a escola à comunidade.", icon: "people", current: partnershipCount, target: partnershipTarget, reward: "+5 XP por parceria" },
+    { id: "school_complete", title: "Comprovar impacto", detail: "Conclua as ações em acordo com o colaborador.", icon: "checkmark-done", current: completed, target: completionTarget, reward: "+20 XP por conclusão" },
+    { id: "school_coordinate", title: "Coordenar pelo chat", detail: "Mantenha as atividades alinhadas com os parceiros.", icon: "chatbubble-ellipses", current: messages, target: messageTarget, reward: "Selo Gestão próxima" },
+  ] : [
+    { id: "supporter_offer", title: "Encontrar uma causa", detail: "Envie propostas para projetos que combinam com você.", icon: "search", current: collaborations, target: collaborationTarget, reward: "+5 XP por proposta" },
+    { id: "supporter_connect", title: "Construir parcerias", detail: "Avance nas oportunidades aceitas pelas escolas.", icon: "people", current: partnershipCount, target: partnershipTarget, reward: "+5 XP por parceria" },
+    { id: "supporter_complete", title: "Entregar a missão", detail: "Finalize a colaboração com a confirmação da escola.", icon: "checkmark-done", current: completed, target: completionTarget, reward: "+20 XP por conclusão" },
+    { id: "supporter_talk", title: "Combinar os próximos passos", detail: "Use o chat para organizar sua ajuda com a escola.", icon: "chatbubble-ellipses", current: messages, target: messageTarget, reward: "Selo Boa conversa" },
+  ];
   return {
+    progressType: isSchool ? "escola" : "colaborador",
     xp,
     level,
     levelTitle: currentLevel.title,
@@ -375,17 +406,11 @@ function buildProgress({ xp, completed, collaborations, active, messages, projec
     xpInLevel,
     levelSpan,
     progressPercent,
-    maxLevel: LEVELS.length,
+    maxLevel: levels.length,
     streak,
     stats: { collaborations, active, messages, projects },
     achievements,
-    missions: [
-      { id: "complete", title: "Finalizar parcerias", detail: "Confirme a conclusão junto com o outro participante.", icon: "checkmark-done", current: completed, target: completionTarget, reward: "+20 XP por conclusão" },
-      { id: "messages", title: "Manter contato", detail: "Use o chat para organizar a colaboração.", icon: "chatbubble-ellipses", current: messages, target: messageTarget, reward: "Selos de comunicação" },
-      userType === "diretor"
-        ? { id: "projects", title: "Criar oportunidades", detail: "Publique projetos para mobilizar a comunidade.", icon: "bulb", current: projects, target: roleTarget, reward: "Selo de impacto" }
-        : { id: "participate", title: "Participar mais", detail: "Envie propostas para projetos que combinam com você.", icon: "hand-left", current: collaborations, target: roleTarget, reward: "Selo de participação" },
-    ],
+    missions,
   };
 }
 
@@ -407,13 +432,21 @@ async function progress(auth) {
   ]);
   const collaborations = collaborationResult[0][0];
   const completed = Number(collaborations.completed);
+  const totalCollaborations = Number(collaborations.total);
+  const active = Number(collaborations.active);
+  const projects = Number(projectResult[0][0].total);
+  const partnerships = active + completed;
+  const isSchool = auth?.tipo === "diretor" || auth?.tipo === "admin";
+  const xp = isSchool
+    ? (projects * 10) + (partnerships * 5) + (completed * 20)
+    : (totalCollaborations * 5) + (partnerships * 5) + (completed * 20);
   return buildProgress({
-    xp: completed * 20,
+    xp,
     completed,
-    collaborations: Number(collaborations.total),
-    active: Number(collaborations.active),
+    collaborations: totalCollaborations,
+    active,
     messages: Number(messageResult[0][0].total),
-    projects: Number(projectResult[0][0].total),
+    projects,
     streak: calculateStreak(activityResult[0].map((row) => row.activity_date)),
     userType: auth?.tipo,
   });

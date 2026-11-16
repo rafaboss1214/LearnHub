@@ -6,6 +6,7 @@ import {
   FlatList,
   Image,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +18,9 @@ import { AuthUser, getCurrentUser } from "../services/auth";
 import { listProjects, Project, toggleFavorite, toggleSupport } from "../services/projects";
 import { ThemeContext } from "../theme/ThemeContext";
 
-type Filter = "todos" | "publicado" | "concluido";
+type Scope = "todos" | "favoritos" | "meus";
+type StatusFilter = "todos" | "publicado" | "concluido";
+type SortMode = "recentes" | "apoios" | "favoritos" | "az";
 
 export default function ProjectsHubScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
@@ -27,7 +30,12 @@ export default function ProjectsHubScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("todos");
+  const [scope, setScope] = useState<Scope>("todos");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
+  const [projectCategory, setProjectCategory] = useState("Todas");
+  const [supportCategory, setSupportCategory] = useState("Todas");
+  const [sortMode, setSortMode] = useState<SortMode>("recentes");
+  const [showFilters, setShowFilters] = useState(false);
   const [pendingId, setPendingId] = useState<number | null>(null);
 
   const load = useCallback(async (refresh = false) => {
@@ -51,26 +59,68 @@ export default function ProjectsHubScreen({ navigation }: any) {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
+  const projectCategories = useMemo(() => ["Todas", ...Array.from(new Set(projects.map((item) => item.categoria))).sort()], [projects]);
+  const supportCategories = useMemo(() => ["Todas", ...Array.from(new Set(projects.flatMap((item) => item.supportCategories || []))).sort()], [projects]);
+  const activeFilterCount = Number(statusFilter !== "todos") + Number(projectCategory !== "Todas") + Number(supportCategory !== "Todas") + Number(sortMode !== "recentes");
+
   const filteredProjects = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("pt-BR");
-    return projects.filter((project) => {
-      const matchesFilter = filter === "todos" || project.status === filter;
-      const matchesSearch = !term || [project.titulo, project.descricao, project.categoria]
+    const visible = projects.filter((project) => {
+      const matchesScope = scope === "todos"
+        || (scope === "favoritos" && project.favorito)
+        || (scope === "meus" && Number(project.criador?.id) === Number(user?.id));
+      const matchesStatus = statusFilter === "todos" || project.status === statusFilter;
+      const matchesProjectCategory = projectCategory === "Todas" || project.categoria === projectCategory;
+      const matchesSupportCategory = supportCategory === "Todas" || project.supportCategories?.includes(supportCategory);
+      const matchesSearch = !term || [project.titulo, project.descricao, project.categoria, project.criador?.nome || "", ...(project.supportCategories || [])]
         .some((value) => value.toLocaleLowerCase("pt-BR").includes(term));
-      return matchesFilter && matchesSearch;
+      return matchesScope && matchesStatus && matchesProjectCategory && matchesSupportCategory && matchesSearch;
     });
-  }, [filter, projects, search]);
+    return [...visible].sort((a, b) => {
+      if (sortMode === "apoios") return b.totalApoios - a.totalApoios;
+      if (sortMode === "favoritos") return b.totalFavoritos - a.totalFavoritos;
+      if (sortMode === "az") return a.titulo.localeCompare(b.titulo, "pt-BR");
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [projectCategory, projects, scope, search, sortMode, statusFilter, supportCategory, user?.id]);
 
-  async function runProjectAction(projectId: number, action: () => Promise<unknown>) {
-    setPendingId(projectId);
+  async function updateFavorite(project: Project) {
+    setPendingId(project.id);
     try {
-      await action();
-      await load(true);
+      const result = await toggleFavorite(project.id);
+      setProjects((current) => current.map((item) => item.id === project.id ? {
+        ...item,
+        favorito: result.favorito,
+        totalFavoritos: Math.max(0, item.totalFavoritos + (result.favorito ? 1 : -1)),
+      } : item));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível concluir a ação.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o favorito.");
     } finally {
       setPendingId(null);
     }
+  }
+
+  async function updateSupport(project: Project) {
+    setPendingId(project.id);
+    try {
+      const result = await toggleSupport(project.id);
+      setProjects((current) => current.map((item) => item.id === project.id ? {
+        ...item,
+        apoiado: result.apoiado,
+        totalApoios: Math.max(0, item.totalApoios + (result.apoiado ? 1 : -1)),
+      } : item));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o apoio.");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  function clearFilters() {
+    setStatusFilter("todos");
+    setProjectCategory("Todas");
+    setSupportCategory("Todas");
+    setSortMode("recentes");
   }
 
   if (loading) {
@@ -84,6 +134,11 @@ export default function ProjectsHubScreen({ navigation }: any) {
 
   const director = user?.tipo === "diretor" || user?.tipo === "admin";
   const collaborator = user?.tipo === "colaborador";
+  const scopeOptions: { id: Scope; label: string; icon: keyof typeof Ionicons.glyphMap; count: number }[] = [
+    { id: "todos", label: "Explorar", icon: "compass-outline", count: projects.length },
+    { id: "favoritos", label: "Favoritos", icon: "heart", count: projects.filter((item) => item.favorito).length },
+    ...(director ? [{ id: "meus" as const, label: "Meus projetos", icon: "school-outline" as const, count: projects.filter((item) => Number(item.criador?.id) === Number(user?.id)).length }] : []),
+  ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
@@ -121,34 +176,50 @@ export default function ProjectsHubScreen({ navigation }: any) {
               <TextInput
                 value={search}
                 onChangeText={setSearch}
-                placeholder="Buscar projeto ou categoria"
+                placeholder="Buscar projeto, escola ou categoria"
                 placeholderTextColor={colors.muted}
                 style={[styles.searchInput, { color: colors.text }]}
               />
             </View>
 
-            <View style={styles.filters}>
-              {(["todos", "publicado", "concluido"] as Filter[]).map((item) => {
-                const active = filter === item;
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scopeTabs}>
+              {scopeOptions.map((item) => {
+                const active = scope === item.id;
                 return (
                   <TouchableOpacity
-                    key={item}
-                    onPress={() => setFilter(item)}
+                    key={item.id}
+                    onPress={() => setScope(item.id)}
                     style={[
-                      styles.filter,
+                      styles.scopeTab,
                       {
                         backgroundColor: active ? colors.primarySoft : colors.card,
                         borderColor: active ? colors.primary : colors.border,
                       },
                     ]}
                   >
-                    <Text style={[styles.filterText, { color: active ? colors.primary : colors.muted }]}>
-                      {item === "todos" ? "Todos" : item === "publicado" ? "Em andamento" : "Concluídos"}
-                    </Text>
+                    <Ionicons name={item.icon} size={17} color={active ? colors.primary : colors.muted} />
+                    <Text style={[styles.filterText, { color: active ? colors.primary : colors.muted }]}>{item.label}</Text>
+                    <View style={[styles.scopeCount, { backgroundColor: active ? colors.primary : colors.surface }]}><Text style={{ color: active ? "#fff" : colors.muted, fontSize: 10, fontWeight: "900" }}>{item.count}</Text></View>
                   </TouchableOpacity>
                 );
               })}
+            </ScrollView>
+
+            <View style={styles.organizerRow}>
+              <View><Text style={[styles.resultCount, { color: colors.text }]}>{filteredProjects.length} {filteredProjects.length === 1 ? "projeto" : "projetos"}</Text><Text style={[styles.resultHint, { color: colors.muted }]}>Resultados organizados para você</Text></View>
+              <TouchableOpacity onPress={() => setShowFilters((current) => !current)} style={[styles.filterButton, { backgroundColor: showFilters || activeFilterCount ? colors.primarySoft : colors.card, borderColor: showFilters || activeFilterCount ? colors.primary : colors.border }]}>
+                <Ionicons name="options-outline" size={19} color={showFilters || activeFilterCount ? colors.primary : colors.muted} />
+                <Text style={{ color: showFilters || activeFilterCount ? colors.primary : colors.muted, fontSize: 12, fontWeight: "800" }}>Filtros{activeFilterCount ? ` · ${activeFilterCount}` : ""}</Text>
+              </TouchableOpacity>
             </View>
+
+            {showFilters && <View style={[styles.advancedFilters, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <FilterGroup title="Situação" values={["todos", "publicado", "concluido"]} selected={statusFilter} onSelect={(value) => setStatusFilter(value as StatusFilter)} labels={{ todos: "Todas", publicado: "Em andamento", concluido: "Concluídos" }} colors={colors} />
+              <FilterGroup title="Categoria do projeto" values={projectCategories} selected={projectCategory} onSelect={setProjectCategory} colors={colors} />
+              <FilterGroup title="Tipo de colaboração" values={supportCategories} selected={supportCategory} onSelect={setSupportCategory} colors={colors} />
+              <FilterGroup title="Ordenar por" values={["recentes", "apoios", "favoritos", "az"]} selected={sortMode} onSelect={(value) => setSortMode(value as SortMode)} labels={{ recentes: "Mais recentes", apoios: "Mais apoiados", favoritos: "Mais favoritados", az: "A–Z" }} colors={colors} />
+              {activeFilterCount > 0 && <TouchableOpacity onPress={clearFilters} style={styles.clearFilters}><Ionicons name="refresh-outline" size={17} color={colors.primary} /><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>Limpar filtros</Text></TouchableOpacity>}
+            </View>}
 
             {!!error && (
               <TouchableOpacity style={[styles.errorBox, { borderColor: colors.danger }]} onPress={() => void load()}>
@@ -163,7 +234,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
             <Ionicons name="folder-open-outline" size={42} color={colors.primary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhum projeto por aqui</Text>
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              {search || filter !== "todos" ? "Ajuste a busca ou os filtros." : "Crie o primeiro projeto para começar."}
+              {scope === "favoritos" ? "Toque no coração de um projeto para guardá-lo aqui." : search || activeFilterCount ? "Ajuste a busca ou limpe os filtros." : "Crie o primeiro projeto para começar."}
             </Text>
           </View>
         }
@@ -205,7 +276,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
                   <View style={styles.actions}>
                     <TouchableOpacity
                       disabled={pending}
-                      onPress={() => void runProjectAction(item.id, () => toggleFavorite(item.id))}
+                      onPress={() => void updateFavorite(item)}
                       style={styles.iconAction}
                     >
                       <Ionicons name={item.favorito ? "heart" : "heart-outline"} size={21} color={item.favorito ? colors.danger : colors.muted} />
@@ -214,7 +285,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
                     {collaborator && (
                       <TouchableOpacity
                         disabled={pending}
-                        onPress={() => void runProjectAction(item.id, () => toggleSupport(item.id))}
+                        onPress={() => void updateSupport(item)}
                         style={styles.iconAction}
                       >
                         <Ionicons name={item.apoiado ? "hand-left" : "hand-left-outline"} size={21} color={item.apoiado ? colors.success : colors.muted} />
@@ -232,6 +303,10 @@ export default function ProjectsHubScreen({ navigation }: any) {
   );
 }
 
+function FilterGroup({ title, values, selected, onSelect, labels = {}, colors }: { title: string; values: readonly string[]; selected: string; onSelect: (value: string) => void; labels?: Record<string, string>; colors: any }) {
+  return <View style={styles.filterGroup}><Text style={[styles.filterGroupTitle, { color: colors.text }]}>{title}</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterGroupOptions}>{values.map((value) => { const active = selected === value; return <TouchableOpacity key={value} onPress={() => onSelect(value)} style={[styles.filterChip, { backgroundColor: active ? colors.primary : colors.background, borderColor: active ? colors.primary : colors.border }]}><Text style={{ color: active ? "#fff" : colors.muted, fontSize: 11, fontWeight: "800" }}>{labels[value] || value}</Text></TouchableOpacity>; })}</ScrollView></View>;
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
@@ -245,9 +320,20 @@ const styles = StyleSheet.create({
   addButton: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", elevation: 3 },
   searchBox: { height: 54, borderRadius: 17, borderWidth: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, marginBottom: 14 },
   searchInput: { flex: 1, fontSize: 15, marginLeft: 10 },
-  filters: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
-  filter: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12 },
+  scopeTabs: { gap: 9, paddingBottom: 16 },
+  scopeTab: { minHeight: 44, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 7 },
+  scopeCount: { minWidth: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 },
   filterText: { fontSize: 12, fontWeight: "700" },
+  organizerRow: { minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 },
+  resultCount: { fontSize: 15, fontWeight: "900" },
+  resultHint: { fontSize: 10, marginTop: 2 },
+  filterButton: { minHeight: 42, borderWidth: 1, borderRadius: 14, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 7 },
+  advancedFilters: { borderWidth: 1, borderRadius: 22, padding: 15, marginBottom: 18 },
+  filterGroup: { marginBottom: 14 },
+  filterGroupTitle: { fontSize: 12, fontWeight: "900", marginBottom: 8 },
+  filterGroupOptions: { gap: 7 },
+  filterChip: { minHeight: 37, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
+  clearFilters: { minHeight: 38, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   errorBox: { borderWidth: 1, borderRadius: 16, padding: 13, flexDirection: "row", gap: 9, marginBottom: 18 },
   errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
   card: { borderWidth: 1, borderRadius: 24, overflow: "hidden", marginBottom: 18, elevation: 2 },

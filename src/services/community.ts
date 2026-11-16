@@ -47,6 +47,7 @@ export type ChatMessage = {
 };
 
 export type Progress = {
+  progressType: "escola" | "colaborador";
   xp: number;
   level: number;
   levelTitle: string;

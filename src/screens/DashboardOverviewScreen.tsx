@@ -3,6 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useContext, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getCurrentUser } from "../services/auth";
 import { listProjects, Project } from "../services/projects";
 import { ThemeContext } from "../theme/ThemeContext";
 
@@ -14,7 +15,8 @@ export default function DashboardOverviewScreen() {
 
   const load = useCallback(async () => {
     try {
-      setProjects(await listProjects());
+      const [items, currentUser] = await Promise.all([listProjects(), getCurrentUser()]);
+      setProjects(items.filter((item) => Number(item.criador?.id) === Number(currentUser?.id)));
       setError("");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar o painel.");
@@ -27,11 +29,15 @@ export default function DashboardOverviewScreen() {
   const supports = projects.reduce((sum, item) => sum + item.totalApoios, 0);
   const favorites = projects.reduce((sum, item) => sum + item.totalFavoritos, 0);
   const completed = projects.filter((item) => item.status === "concluido").length;
+  const categories = Object.entries(projects.reduce<Record<string, number>>((summary, item) => {
+    summary[item.categoria] = (summary[item.categoria] || 0) + 1;
+    return summary;
+  }, {})).sort((a, b) => b[1] - a[1]);
 
   const cards = [
-    { label: "Projetos", value: projects.length, icon: "folder-outline" as const, color: colors.primary },
-    { label: "Apoios", value: supports, icon: "hand-left-outline" as const, color: colors.success },
-    { label: "Favoritos", value: favorites, icon: "heart-outline" as const, color: colors.danger },
+    { label: "Projetos da escola", value: projects.length, icon: "folder-outline" as const, color: colors.primary },
+    { label: "Apoios recebidos", value: supports, icon: "hand-left-outline" as const, color: colors.success },
+    { label: "Favoritos recebidos", value: favorites, icon: "heart-outline" as const, color: colors.danger },
     { label: "Concluídos", value: completed, icon: "checkmark-done-outline" as const, color: colors.accent },
   ];
 
@@ -40,7 +46,7 @@ export default function DashboardOverviewScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.eyebrow, { color: colors.primary }]}>VISÃO GERAL</Text>
         <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>Indicadores atualizados diretamente do banco hospedado.</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>Indicadores exclusivos dos projetos criados por esta escola.</Text>
         {loading ? <ActivityIndicator style={styles.loader} color={colors.primary} /> : (
           <>
             <View style={styles.grid}>
@@ -56,9 +62,13 @@ export default function DashboardOverviewScreen() {
               <Ionicons name="analytics-outline" size={26} color={colors.primary} />
               <View style={styles.insightCopy}>
                 <Text style={[styles.insightTitle, { color: colors.text }]}>Impacto visível</Text>
-                <Text style={[styles.insightText, { color: colors.muted }]}>Acompanhe apoios e favoritos para identificar quais iniciativas mais mobilizam a comunidade.</Text>
+                <Text style={[styles.insightText, { color: colors.muted }]}>Os números consideram somente os projetos desta conta, sem misturar iniciativas de outras escolas.</Text>
               </View>
             </View>
+            {!!categories.length && <View style={[styles.categoriesCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.categoriesHeader}><View><Text style={[styles.categoriesTitle, { color: colors.text }]}>Projetos por categoria</Text><Text style={[styles.categoriesSubtitle, { color: colors.muted }]}>Distribuição das iniciativas da escola</Text></View><Ionicons name="options-outline" size={22} color={colors.primary} /></View>
+              {categories.map(([category, total]) => <View key={category} style={[styles.categoryRow, { borderTopColor: colors.border }]}><Text style={[styles.categoryName, { color: colors.text }]}>{category}</Text><View style={[styles.categoryCount, { backgroundColor: colors.primarySoft }]}><Text style={{ color: colors.primary, fontWeight: "900", fontSize: 11 }}>{total}</Text></View></View>)}
+            </View>}
           </>
         )}
         {!!error && <Text style={[styles.error, { color: colors.danger }]} onPress={() => void load()}>{error} Toque para tentar novamente.</Text>}
@@ -83,5 +93,12 @@ const styles = StyleSheet.create({
   insightCopy: { flex: 1, marginLeft: 13 },
   insightTitle: { fontSize: 16, fontWeight: "800" },
   insightText: { fontSize: 13, lineHeight: 19, marginTop: 4 },
+  categoriesCard: { borderWidth: 1, borderRadius: 23, padding: 18, marginTop: 16 },
+  categoriesHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  categoriesTitle: { fontSize: 16, fontWeight: "900" },
+  categoriesSubtitle: { fontSize: 11, marginTop: 3 },
+  categoryRow: { minHeight: 48, borderTopWidth: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  categoryName: { flex: 1, fontSize: 13, fontWeight: "700" },
+  categoryCount: { minWidth: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   error: { fontSize: 13, lineHeight: 18, marginTop: 18 },
 });

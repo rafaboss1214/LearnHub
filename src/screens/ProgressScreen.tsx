@@ -38,9 +38,9 @@ export default function ProgressScreen() {
   const unlocked = data?.achievements.filter((item) => item.unlocked).length || 0;
 
   return <View style={[styles.page, { backgroundColor: colors.background }]}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={colors.primary} />}>
-    <Text style={[styles.eyebrow, { color: colors.primary }]}>JORNADA DE IMPACTO</Text>
-    <Text style={[styles.title, { color: colors.text }]}>Sua progressão</Text>
-    <Text style={[styles.subtitle, { color: colors.muted }]}>Complete missões, evolua de nível e desbloqueie conquistas enquanto transforma sua comunidade.</Text>
+    <Text style={[styles.eyebrow, { color: colors.primary }]}>{data?.progressType === "escola" ? "JORNADA DA ESCOLA" : "JORNADA DO COLABORADOR"}</Text>
+    <Text style={[styles.title, { color: colors.text }]}>{data?.progressType === "escola" ? "Impacto da escola" : "Sua progressão"}</Text>
+    <Text style={[styles.subtitle, { color: colors.muted }]}>{data?.progressType === "escola" ? "Publique oportunidades, forme parcerias e acompanhe o impacto criado pela escola." : "Encontre causas, complete colaborações e desbloqueie conquistas enquanto transforma sua comunidade."}</Text>
 
     {loading && <ActivityIndicator style={{ marginTop: 40 }} size="large" color={colors.primary} />}
     {!!error && <TouchableOpacity onPress={() => void load()} style={[styles.errorCard, { borderColor: colors.danger }]}><Ionicons name="refresh-outline" size={21} color={colors.danger} /><Text style={[styles.error, { color: colors.danger }]}>{error} Toque para tentar novamente.</Text></TouchableOpacity>}
@@ -57,9 +57,9 @@ export default function ProgressScreen() {
       </View>
 
       <View style={styles.stats}>
-        <Stat icon="checkmark-done" value={data.completed} label="Concluídas" color={colors.success} colors={colors} />
-        <Stat icon="flame" value={data.streak} label="Dias em sequência" color="#FF7A45" colors={colors} />
-        <Stat icon="chatbubbles" value={data.stats.messages} label="Mensagens" color="#15AABF" colors={colors} />
+        {data.progressType === "escola"
+          ? <><Stat icon="folder-open" value={data.stats.projects} label="Projetos da escola" color={colors.primary} colors={colors} /><Stat icon="checkmark-done" value={data.completed} label="Impactos concluídos" color={colors.success} colors={colors} /><Stat icon="people" value={data.stats.active} label="Parcerias ativas" color="#15AABF" colors={colors} /></>
+          : <><Stat icon="hand-left" value={data.stats.collaborations} label="Propostas enviadas" color={colors.primary} colors={colors} /><Stat icon="checkmark-done" value={data.completed} label="Concluídas" color={colors.success} colors={colors} /><Stat icon="flame" value={data.streak} label="Dias em sequência" color="#FF7A45" colors={colors} /></>}
       </View>
 
       <View style={styles.sectionHeader}><View><Text style={[styles.sectionTitle, { color: colors.text }]}>Missões atuais</Text><Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Pequenos objetivos para continuar avançando.</Text></View><Ionicons name="game-controller-outline" size={25} color={colors.primary} /></View>
@@ -77,7 +77,7 @@ export default function ProgressScreen() {
         <Text style={[styles.achievementTitle, { color: colors.text }]}>{achievement.title}</Text><Text style={[styles.achievementDescription, { color: colors.muted }]}>{achievement.description}</Text><Text style={[styles.achievementProgress, { color: achievement.unlocked ? colors.success : colors.primary }]}>{achievement.unlocked ? "CONQUISTADO" : `${achievement.progress}/${achievement.target}`}</Text>
       </View>)}</View>
 
-      <View style={[styles.tip, { backgroundColor: colors.primarySoft }]}><Ionicons name="information-circle-outline" size={25} color={colors.primary} /><View style={{ flex: 1 }}><Text style={[styles.tipTitle, { color: colors.primary }]}>Como ganhar XP</Text><Text style={[styles.tipText, { color: colors.text }]}>Quando os dois participantes confirmam a conclusão de uma colaboração, cada um recebe 20 XP automaticamente.</Text></View></View>
+      <View style={[styles.tip, { backgroundColor: colors.primarySoft }]}><Ionicons name="information-circle-outline" size={25} color={colors.primary} /><View style={{ flex: 1 }}><Text style={[styles.tipTitle, { color: colors.primary }]}>Como ganhar XP</Text><Text style={[styles.tipText, { color: colors.text }]}>{data.progressType === "escola" ? "A escola recebe 10 XP por projeto, 5 XP por parceria formada e 20 XP por colaboração concluída." : "O colaborador recebe 5 XP por proposta, 5 XP por parceria formada e 20 XP por colaboração concluída."}</Text></View></View>
     </>}
   </ScrollView></View>;
 }
