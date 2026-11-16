@@ -56,6 +56,9 @@ async function ensureAccount(account) {
   const authorization = { Authorization: `Bearer ${session.token}` };
   const updated = await api("/api/auth/me", { method: "PUT", headers: authorization, body: JSON.stringify({ nome: account.nome, endereco: account.address }) });
   if (!updated.response.ok) throw new Error(`${account.email}: ${updated.body?.error || "perfil não atualizado"}`);
+  if (Number(updated.body?.user?.endereco?.latitudeAprox) !== account.address.latitudeAprox || Number(updated.body?.user?.endereco?.longitudeAprox) !== account.address.longitudeAprox) {
+    throw new Error("A API hospedada ainda não concluiu a implantação do mapa.");
+  }
 
   if (account.project) {
     const listed = await api("/api/projects", { headers: authorization });
@@ -63,6 +66,11 @@ async function ensureAccount(account) {
     if (!exists) {
       const created = await api("/api/projects", { method: "POST", headers: authorization, body: JSON.stringify({ ...account.project, status: "publicado" }) });
       if (!created.response.ok) throw new Error(`${account.email}: ${created.body?.error || "projeto não criado"}`);
+    }
+    const verifiedProjects = await api("/api/projects", { headers: authorization });
+    const verifiedProject = verifiedProjects.body?.projects?.find((project) => project.titulo === account.project.titulo && Number(project.criador?.id) === Number(session.user.id));
+    if (verifiedProject?.location?.latitude == null || verifiedProject?.location?.longitude == null || Object.hasOwn(verifiedProject.location, "cep")) {
+      throw new Error(`${account.email}: localização pública do projeto não foi validada.`);
     }
   }
   return { email: account.email, senha: account.senha, tipo: account.tipo };
