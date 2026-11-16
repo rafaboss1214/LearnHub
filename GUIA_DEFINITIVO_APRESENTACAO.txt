@@ -1,6 +1,6 @@
 ============================================================
 GUIA DEFINITIVO DE INSTALAÇÃO E APRESENTAÇÃO - LEARNHUB
-Expo SDK 57 + API e MySQL hospedados
+Expo SDK 58 + API e MySQL hospedados
 ============================================================
 
 Este guia descreve a configuração atual do projeto. A API e o banco
@@ -15,7 +15,7 @@ ou abrir um túnel manual para a API.
 
 - Node.js 22.13 ou superior;
 - npm (instalado junto com o Node.js);
-- Expo Go compatível com o Expo SDK 57;
+- Expo Go 58.0.5 ou outra versão compatível com o Expo SDK 58;
 - acesso à internet no computador e no celular.
 
 Confirme as versões no CMD:
@@ -59,7 +59,7 @@ Quando estiver pronto, o terminal mostrará:
 
 ====================================
 LEARNHUB PRONTO
-Expo SDK: exposdk:57.0.0
+Expo SDK: exposdk:58.0.0
 Conexão: túnel público
 ====================================
 

@@ -152,7 +152,7 @@ Antes de começar, verifique se você possui:
 
 - **Node.js 22.13 ou superior**;
 - **npm**;
-- **Expo Go atualizado** no celular;
+- **Expo Go 58.0.5** ou outra versão compatível com o **Expo SDK 58** no celular;
 - conexão com a internet para acessar a API e o banco hospedados.
 
 > O MySQL local é opcional. Para usar o ambiente hospedado, não é necessário instalar banco de dados nem copiar credenciais para a máquina.
