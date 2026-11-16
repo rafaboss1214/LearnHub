@@ -83,7 +83,7 @@ test("normaliza endereço privado e valida CEP/UF", () => {
   assert.throws(() => normalizeAddress({ latitudeAprox: 100 }), /Latitude aproximada inválida/);
 });
 
-test("projeto publica somente a região aproximada e nunca o CEP ou número", () => {
+test("projeto público não expõe endereço ou localização", () => {
   const project = publicProject({
     id: 9, titulo: "Horta comunitária", descricao: "Projeto de demonstração para o bairro.", categoria: "Meio ambiente",
     imagem_url: null, has_cover: 0, status: "publicado", criador_id: 2, criador_nome: "Escola Samambaia",
@@ -91,12 +91,9 @@ test("projeto publica somente a região aproximada e nunca o CEP ou número", ()
     local_estado: "SP", local_latitude: "-24.03570", local_longitude: "-46.52530", cep: "11712400", numero: "123",
     total_favoritos: 0, total_apoios: 0, favorito: 0, apoiado: 0, created_at: new Date(), updated_at: new Date(),
   });
-  assert.deepEqual(project.location, {
-    street: "Avenida do Corretor de Imóveis", neighborhood: "Samambaia", city: "Praia Grande", state: "SP",
-    latitude: -24.0357, longitude: -46.5253,
-  });
-  assert.equal(Object.hasOwn(project.location, "cep"), false);
-  assert.equal(Object.hasOwn(project.location, "number"), false);
+  assert.equal(Object.hasOwn(project, "location"), false);
+  assert.equal(Object.hasOwn(project, "cep"), false);
+  assert.equal(Object.hasOwn(project, "numero"), false);
 });
 
 test("processa upload e remove metadados em JPEG", async () => {

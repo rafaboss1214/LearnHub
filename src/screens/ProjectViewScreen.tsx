@@ -173,8 +173,6 @@ export default function ProjectViewScreen({ navigation, route }: any) {
         <Text style={[styles.dot, { color: colors.muted }]}>•</Text>
         <Text style={[styles.author, { color: colors.muted }]}>{new Date(project.createdAt).toLocaleDateString("pt-BR")}</Text>
       </View>
-      {!!project.location && <View style={[styles.locationCard, { backgroundColor: colors.card, borderColor: colors.border }]}><Ionicons name="location-outline" size={21} color={colors.primary} /><View style={{ flex: 1 }}><Text style={[styles.locationTitle, { color: colors.text }]}>Localização aproximada</Text><Text style={[styles.locationText, { color: colors.muted }]}>{[project.location.street, project.location.neighborhood, project.location.city, project.location.state].filter(Boolean).join(" · ")}</Text></View></View>}
-
       <View style={[styles.actionBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TouchableOpacity disabled={saving} onPress={() => void run(() => toggleFavorite(project.id))} style={styles.actionItem}>
           <Ionicons name={project.favorito ? "heart" : "heart-outline"} size={23} color={project.favorito ? colors.danger : colors.muted} />
@@ -267,9 +265,6 @@ const styles = StyleSheet.create({
   category: { flex: 1, fontSize: 12, fontWeight: "800", letterSpacing: 0.7 },
   status: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   statusText: { fontSize: 11, fontWeight: "800" },
-  locationCard: { borderWidth: 1, borderRadius: 16, padding: 13, flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 },
-  locationTitle: { fontSize: 12, fontWeight: "900" },
-  locationText: { fontSize: 11, lineHeight: 16, marginTop: 2 },
   title: { fontSize: 30, lineHeight: 36, fontWeight: "900", letterSpacing: -0.5, marginTop: 12 },
   authorRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 12 },
   author: { fontSize: 12, fontWeight: "600" },

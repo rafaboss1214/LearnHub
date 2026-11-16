@@ -4,7 +4,6 @@ import { Platform } from "react-native";
 import { ApiError, apiAssetUrl, apiRequest } from "./api";
 
 export type CommunityType = "aluno" | "responsavel" | "comunidade";
-export type UserAddress = { cep: string; rua: string; bairro: string; cidade: string; estado: string; numero: string; complemento: string; latitudeAprox?: number | null; longitudeAprox?: number | null };
 export type AuthUser = {
   id: number;
   nome: string;
@@ -12,7 +11,6 @@ export type AuthUser = {
   tipo: "colaborador" | "diretor" | "admin";
   communityType?: CommunityType | null;
   descricao?: string;
-  endereco?: UserAddress;
   habilidades?: string;
   institutionEvidence?: string;
   institutionStatus?: "nao_verificada" | "pendente" | "aprovada" | "recusada" | null;
@@ -54,7 +52,7 @@ export async function clearSession() {
   ]);
 }
 
-export async function register(payload: { nome: string; email: string; senha: string; tipo: "colaborador" | "diretor"; communityType?: CommunityType; institutionEvidence?: string; cep?: string; rua?: string; bairro?: string; cidade?: string; estado?: string; numero?: string; complemento?: string; latitudeAprox?: number | null; longitudeAprox?: number | null }) {
+export async function register(payload: { nome: string; email: string; senha: string; tipo: "colaborador" | "diretor"; communityType?: CommunityType; institutionEvidence?: string }) {
   return apiRequest<{ message: string; user: AuthUser }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -110,11 +108,6 @@ export async function getCurrentUser() {
   return fetchCurrentUser(token);
 }
 
-export async function refreshCurrentUser() {
-  const token = await getAuthToken();
-  return token ? fetchCurrentUser(token) : null;
-}
-
 async function authorizedAuthRequest<T>(options: RequestInit) {
   const token = await getAuthToken();
   if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
@@ -124,7 +117,7 @@ async function authorizedAuthRequest<T>(options: RequestInit) {
   });
 }
 
-export async function updateProfile(payload: { nome?: string; email?: string; senha?: string; descricao?: string; habilidades?: string; endereco?: Partial<UserAddress>; avatarBase64?: string; avatarMime?: string; removeAvatar?: boolean }) {
+export async function updateProfile(payload: { nome?: string; email?: string; senha?: string; descricao?: string; habilidades?: string; avatarBase64?: string; avatarMime?: string; removeAvatar?: boolean }) {
   const result = await authorizedAuthRequest<{ user: AuthUser }>({
     method: "PUT",
     body: JSON.stringify(payload),

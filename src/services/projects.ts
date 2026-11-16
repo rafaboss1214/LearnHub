@@ -19,7 +19,6 @@ export type Project = {
   imagePath?: string;
   status: ProjectStatus;
   criador: { id: number; nome: string } | null;
-  location: { street: string; neighborhood: string; city: string; state: string; latitude: number | null; longitude: number | null } | null;
   totalFavoritos: number;
   totalApoios: number;
   favorito: boolean;

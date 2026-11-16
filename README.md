@@ -90,10 +90,7 @@ MySQL hospedado
 
 - Tema claro e escuro;
 - perfil editável e exclusão da própria conta;
-- busca de projetos próximos em mapa interativo, com filtros de 2, 5 ou 10 km;
-- CEP, número e complemento privados; o mapa recebe somente a posição aproximada da região;
 - foto de perfil e capa de projeto com remoção de metadados;
-- preenchimento de endereço por CEP, com edição manual disponível;
 - recuperação de senha por e-mail quando o SMTP está configurado;
 - senhas protegidas com hash bcrypt;
 - notificações de solicitações e mensagens;
@@ -260,11 +257,8 @@ npm run dev:local
 | `npm run test:hosted` | Testa o CRUD contra a API hospedada |
 | `npm run test:hosted:community` | Testa o fluxo hospedado de colaboração |
 | `npm run admin:create` | Cria uma conta administrativa com variáveis locais |
-| `npm run demo:nearby` | Prepara contas e projetos fictícios para testar o mapa |
 
 `npm run escola`, `npm run start:tunnel` e `npm run dev:tunnel` continuam disponíveis como aliases do modo túnel.
-
-`npm run demo:nearby` prepara duas escolas, um colaborador e dois projetos fictícios no bairro Samambaia, em Praia Grande/SP. Execute somente no ambiente de demonstração desejado.
 
 ## 🔌 API
 

@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "admin:create": "node backend/scripts/create-admin.js",
-    "demo:nearby": "node backend/scripts/seed-nearby-demo.js",
     "start": "node scripts/start.js --tunnel",
     "app": "node scripts/start.js --lan",
     "start:expo": "node scripts/start.js --lan",
@@ -55,7 +54,6 @@
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
-    "react-native-maps": "1.29.11",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",

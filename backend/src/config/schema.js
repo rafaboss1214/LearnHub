@@ -210,15 +210,6 @@ async function ensureDatabaseSchema() {
   }
   await pool.query(`INSERT IGNORE INTO perfis_usuarios (usuario_id, status_institucional)
                     SELECT id, IF(tipo_usuario='diretor','nao_verificada',NULL) FROM usuarios`);
-  await pool.query(`UPDATE perfis_usuarios
-                    SET latitude_aprox = -24.035700, longitude_aprox = -46.525300
-                    WHERE LOWER(TRIM(bairro)) = 'samambaia'
-                      AND LOWER(TRIM(cidade)) = 'praia grande'
-                      AND (
-                        latitude_aprox IS NULL OR longitude_aprox IS NULL
-                        OR latitude_aprox NOT BETWEEN -24.060000 AND -24.010000
-                        OR longitude_aprox NOT BETWEEN -46.550000 AND -46.500000
-                      )`);
 }
 
 module.exports = { ensureDatabaseSchema };
