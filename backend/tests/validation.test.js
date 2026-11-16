@@ -77,9 +77,9 @@ test("normaliza endereço privado e valida CEP/UF", () => {
     cep: "01001000", rua: "", bairro: "", cidade: "São Paulo", estado: "SP", latitudeAprox: null, longitudeAprox: null, numero: "", complemento: "",
   });
   assert.throws(() => normalizeAddress({ cep: "123" }), /CEP válido/);
-  const located = normalizeAddress({ cep: "11712-400", cidade: "Praia Grande", estado: "SP", latitudeAprox: -24.00583, longitudeAprox: -46.40278 });
-  assert.equal(located.latitudeAprox, -24.00583);
-  assert.equal(located.longitudeAprox, -46.40278);
+  const located = normalizeAddress({ cep: "11712-400", cidade: "Praia Grande", estado: "SP", latitudeAprox: -24.0357, longitudeAprox: -46.5253 });
+  assert.equal(located.latitudeAprox, -24.0357);
+  assert.equal(located.longitudeAprox, -46.5253);
   assert.throws(() => normalizeAddress({ latitudeAprox: 100 }), /Latitude aproximada inválida/);
 });
 
@@ -88,12 +88,12 @@ test("projeto publica somente a região aproximada e nunca o CEP ou número", ()
     id: 9, titulo: "Horta comunitária", descricao: "Projeto de demonstração para o bairro.", categoria: "Meio ambiente",
     imagem_url: null, has_cover: 0, status: "publicado", criador_id: 2, criador_nome: "Escola Samambaia",
     local_rua: "Avenida do Corretor de Imóveis", local_bairro: "Samambaia", local_cidade: "Praia Grande",
-    local_estado: "SP", local_latitude: "-24.00583", local_longitude: "-46.40278", cep: "11712400", numero: "123",
+    local_estado: "SP", local_latitude: "-24.03570", local_longitude: "-46.52530", cep: "11712400", numero: "123",
     total_favoritos: 0, total_apoios: 0, favorito: 0, apoiado: 0, created_at: new Date(), updated_at: new Date(),
   });
   assert.deepEqual(project.location, {
     street: "Avenida do Corretor de Imóveis", neighborhood: "Samambaia", city: "Praia Grande", state: "SP",
-    latitude: -24.00583, longitude: -46.40278,
+    latitude: -24.0357, longitude: -46.5253,
   });
   assert.equal(Object.hasOwn(project.location, "cep"), false);
   assert.equal(Object.hasOwn(project.location, "number"), false);

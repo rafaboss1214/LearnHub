@@ -110,6 +110,11 @@ export async function getCurrentUser() {
   return fetchCurrentUser(token);
 }
 
+export async function refreshCurrentUser() {
+  const token = await getAuthToken();
+  return token ? fetchCurrentUser(token) : null;
+}
+
 async function authorizedAuthRequest<T>(options: RequestInit) {
   const token = await getAuthToken();
   if (!token) throw new Error("Sua sessão expirou. Entre novamente.");

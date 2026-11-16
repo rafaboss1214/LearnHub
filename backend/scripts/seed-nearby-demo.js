@@ -6,7 +6,7 @@ const accounts = [
     email: "escola.horizonte.samambaia@learnhub.demo",
     senha: "Escola12345",
     tipo: "diretor",
-    address: { cep: "11712991", rua: "Rua Educacional Horizonte", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "100", complemento: "Unidade demonstrativa", latitudeAprox: -24.0049, longitudeAprox: -46.404 },
+    address: { cep: "11712991", rua: "Rua Educacional Horizonte", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "100", complemento: "Unidade demonstrativa", latitudeAprox: -24.0357, longitudeAprox: -46.5253 },
     project: { titulo: "Horta comunitária do Samambaia", descricao: "Criação de uma horta educativa para aproximar estudantes, famílias e moradores do bairro Samambaia.", categoria: "Meio ambiente", supportCategories: ["Mão de obra", "Recursos materiais", "Conhecimento"] },
   },
   {
@@ -14,7 +14,7 @@ const accounts = [
     email: "escola.caminhos.samambaia@learnhub.demo",
     senha: "Escola12345",
     tipo: "diretor",
-    address: { cep: "11712992", rua: "Rua Educacional Caminhos", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "200", complemento: "Unidade demonstrativa", latitudeAprox: -24.0066, longitudeAprox: -46.4017 },
+    address: { cep: "11712992", rua: "Rua Educacional Caminhos", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "200", complemento: "Unidade demonstrativa", latitudeAprox: -24.0344, longitudeAprox: -46.527 },
     project: { titulo: "Biblioteca aberta para a comunidade", descricao: "Organização de um espaço de leitura compartilhado com oficinas e doações de livros para estudantes e moradores próximos.", categoria: "Educação", supportCategories: ["Recursos materiais", "Conhecimento", "Serviços"] },
   },
   {
@@ -23,7 +23,7 @@ const accounts = [
     senha: "Colabora12345",
     tipo: "colaborador",
     communityType: "comunidade",
-    address: { cep: "11712993", rua: "Rua Comunitária Samambaia", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "300", complemento: "Endereço demonstrativo", latitudeAprox: -24.0058, longitudeAprox: -46.4028 },
+    address: { cep: "11712993", rua: "Rua Comunitária Samambaia", bairro: "Samambaia", cidade: "Praia Grande", estado: "SP", numero: "300", complemento: "Endereço demonstrativo", latitudeAprox: -24.0351, longitudeAprox: -46.5262 },
   },
 ];
 

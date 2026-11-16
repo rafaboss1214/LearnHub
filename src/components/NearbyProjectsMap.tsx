@@ -27,10 +27,30 @@ function projectCoordinate(project: Project) {
 export default function NearbyProjectsMap({ projects, user, radius, onRadiusChange, onOpenProject, colors }: Props) {
   const latitude = user?.endereco?.latitudeAprox;
   const longitude = user?.endereco?.longitudeAprox;
+  const mapRef = React.useRef<MapView>(null);
   const [mapReady, setMapReady] = React.useState(false);
   const [mapFailed, setMapFailed] = React.useState(false);
   const [mapAttempt, setMapAttempt] = React.useState(0);
   const readyTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mappedProjects = projects.map((project) => ({ project, coordinate: projectCoordinate(project) })).filter((item) => item.coordinate);
+
+  const fitMapToMarkers = () => {
+    if (latitude == null || longitude == null) return;
+    const coordinates = [
+      { latitude, longitude },
+      ...mappedProjects.map(({ coordinate }) => coordinate!),
+    ];
+    if (coordinates.length === 1) {
+      coordinates.push(
+        { latitude: latitude + 0.006, longitude: longitude + 0.006 },
+        { latitude: latitude - 0.006, longitude: longitude - 0.006 },
+      );
+    }
+    mapRef.current?.fitToCoordinates(coordinates, {
+      edgePadding: { top: 55, right: 55, bottom: 55, left: 55 },
+      animated: false,
+    });
+  };
 
   React.useEffect(() => {
     if (readyTimer.current) clearTimeout(readyTimer.current);
@@ -45,6 +65,7 @@ export default function NearbyProjectsMap({ projects, user, radius, onRadiusChan
     if (readyTimer.current) clearTimeout(readyTimer.current);
     setMapReady(true);
     setMapFailed(false);
+    setTimeout(fitMapToMarkers, 180);
   };
 
   const retryMap = () => {
@@ -62,11 +83,11 @@ export default function NearbyProjectsMap({ projects, user, radius, onRadiusChan
     return <View style={[styles.unavailable, { backgroundColor: colors.card, borderColor: colors.border }]}><Ionicons name="location-outline" size={30} color={colors.primary} /><View style={{ flex: 1 }}><Text style={[styles.unavailableTitle, { color: colors.text }]}>Informe seu CEP para usar o mapa</Text><Text style={[styles.unavailableText, { color: colors.muted }]}>Abra o Perfil, edite o endereço e consulte o CEP. O CEP e o número continuarão privados.</Text></View></View>;
   }
 
-  const mappedProjects = projects.map((project) => ({ project, coordinate: projectCoordinate(project) })).filter((item) => item.coordinate);
   return <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
     <View style={styles.header}><View><Text style={[styles.title, { color: colors.text }]}>Projetos perto de você</Text><Text style={[styles.subtitle, { color: colors.muted }]}>Posições aproximadas para proteger os endereços.</Text></View><Ionicons name="map-outline" size={25} color={colors.primary} /></View>
     {Platform.OS === "web" ? <View style={[styles.webFallback, { backgroundColor: colors.primarySoft }]}><Ionicons name="phone-portrait-outline" size={25} color={colors.primary} /><Text style={{ color: colors.primary, fontWeight: "700" }}>Abra no Expo Go para visualizar o mapa interativo.</Text><TouchableOpacity onPress={openGoogleMaps} style={[styles.googleMapsButton, { borderColor: colors.primary }]}><Ionicons name="open-outline" size={16} color={colors.primary} /><Text style={{ color: colors.primary, fontWeight: "800" }}>Abrir no Google Maps</Text></TouchableOpacity></View> : <View style={styles.mapFrame}>
       <MapView
+        ref={mapRef}
         key={`nearby-map-${latitude}-${longitude}-${mapAttempt}`}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
         style={styles.map}

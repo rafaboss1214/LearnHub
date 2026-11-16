@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useContext, useMemo, useState } from "react";
@@ -15,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NearbyProjectsMap from "../components/NearbyProjectsMap";
-import { AuthUser } from "../services/auth";
+import { AuthUser, refreshCurrentUser } from "../services/auth";
 import { listProjects, Project, toggleFavorite, toggleSupport } from "../services/projects";
 import { ThemeContext } from "../theme/ThemeContext";
 
@@ -50,10 +49,10 @@ export default function ProjectsHubScreen({ navigation }: any) {
     try {
       const [items, savedUser] = await Promise.all([
         listProjects(),
-        AsyncStorage.getItem("user"),
+        refreshCurrentUser(),
       ]);
       setProjects(items);
-      setUser(savedUser ? JSON.parse(savedUser) : null);
+      setUser(savedUser);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar os projetos.");
     } finally {
