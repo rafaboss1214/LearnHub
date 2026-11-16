@@ -4,6 +4,7 @@ const sharp = require("sharp");
 const { databaseEndpoint } = require("../src/config/env");
 const { normalizeAddress, normalizeEmail, publicUser, validateRegistration } = require("../src/services/auth-service");
 const { sanitizeImage } = require("../src/services/media-service");
+const { publicProject } = require("../src/services/project-service");
 
 test("normaliza host MySQL copiado como URL ou host com porta", () => {
   assert.deepEqual(databaseEndpoint(" mysql://db.example.com:24876/defaultdb ", 3306), {
@@ -73,9 +74,29 @@ test("resposta pública nunca inclui o hash da senha", () => {
 
 test("normaliza endereço privado e valida CEP/UF", () => {
   assert.deepEqual(normalizeAddress({ cep: "01001-000", cidade: "São Paulo", estado: "sp" }), {
-    cep: "01001000", rua: "", bairro: "", cidade: "São Paulo", estado: "SP", numero: "", complemento: "",
+    cep: "01001000", rua: "", bairro: "", cidade: "São Paulo", estado: "SP", latitudeAprox: null, longitudeAprox: null, numero: "", complemento: "",
   });
   assert.throws(() => normalizeAddress({ cep: "123" }), /CEP válido/);
+  const located = normalizeAddress({ cep: "11712-400", cidade: "Praia Grande", estado: "SP", latitudeAprox: -24.00583, longitudeAprox: -46.40278 });
+  assert.equal(located.latitudeAprox, -24.00583);
+  assert.equal(located.longitudeAprox, -46.40278);
+  assert.throws(() => normalizeAddress({ latitudeAprox: 100 }), /Latitude aproximada inválida/);
+});
+
+test("projeto publica somente a região aproximada e nunca o CEP ou número", () => {
+  const project = publicProject({
+    id: 9, titulo: "Horta comunitária", descricao: "Projeto de demonstração para o bairro.", categoria: "Meio ambiente",
+    imagem_url: null, has_cover: 0, status: "publicado", criador_id: 2, criador_nome: "Escola Samambaia",
+    local_rua: "Avenida do Corretor de Imóveis", local_bairro: "Samambaia", local_cidade: "Praia Grande",
+    local_estado: "SP", local_latitude: "-24.00583", local_longitude: "-46.40278", cep: "11712400", numero: "123",
+    total_favoritos: 0, total_apoios: 0, favorito: 0, apoiado: 0, created_at: new Date(), updated_at: new Date(),
+  });
+  assert.deepEqual(project.location, {
+    street: "Avenida do Corretor de Imóveis", neighborhood: "Samambaia", city: "Praia Grande", state: "SP",
+    latitude: -24.00583, longitude: -46.40278,
+  });
+  assert.equal(Object.hasOwn(project.location, "cep"), false);
+  assert.equal(Object.hasOwn(project.location, "number"), false);
 });
 
 test("processa upload e remove metadados em JPEG", async () => {

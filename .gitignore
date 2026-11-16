@@ -50,3 +50,4 @@ app-example
 
 # artefatos locais (QR codes e exportacoes de verificacao)
 /artifacts/
+/tmp/

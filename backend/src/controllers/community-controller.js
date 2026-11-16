@@ -26,12 +26,6 @@ async function markMessagesRead(request, response) {
   await communityService.markMessagesRead(request.params.id, request.auth);
   return response.status(204).end();
 }
-async function issueCertificate(request, response) {
-  return response.json({ success: true, certificate: await communityService.issueCertificate(request.params.id, request.auth) });
-}
-async function getCertificate(request, response) {
-  return response.json({ success: true, certificate: await communityService.getCertificate(request.params.code, request.auth) });
-}
 async function progress(request, response) {
   return response.json({ success: true, progress: await communityService.progress(request.auth) });
 }
@@ -52,4 +46,4 @@ async function updateReport(request, response) {
   return response.status(204).end();
 }
 
-module.exports = { listCollaborations, createCollaboration, updateCollaboration, updateClosure, listConversations, listMessages, sendMessage, markMessagesRead, issueCertificate, getCertificate, progress, notifications, reportProject, adminDashboard, listReports, updateReport };
+module.exports = { listCollaborations, createCollaboration, updateCollaboration, updateClosure, listConversations, listMessages, sendMessage, markMessagesRead, progress, notifications, reportProject, adminDashboard, listReports, updateReport };

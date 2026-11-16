@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 import { ApiError, apiAssetUrl, apiRequest } from "./api";
 
 export type CommunityType = "aluno" | "responsavel" | "comunidade";
-export type UserAddress = { cep: string; rua: string; bairro: string; cidade: string; estado: string; numero: string; complemento: string };
+export type UserAddress = { cep: string; rua: string; bairro: string; cidade: string; estado: string; numero: string; complemento: string; latitudeAprox?: number | null; longitudeAprox?: number | null };
 export type AuthUser = {
   id: number;
   nome: string;
@@ -54,7 +54,7 @@ export async function clearSession() {
   ]);
 }
 
-export async function register(payload: { nome: string; email: string; senha: string; tipo: "colaborador" | "diretor"; communityType?: CommunityType; institutionEvidence?: string; cep?: string; rua?: string; bairro?: string; cidade?: string; estado?: string; numero?: string; complemento?: string }) {
+export async function register(payload: { nome: string; email: string; senha: string; tipo: "colaborador" | "diretor"; communityType?: CommunityType; institutionEvidence?: string; cep?: string; rua?: string; bairro?: string; cidade?: string; estado?: string; numero?: string; complemento?: string; latitudeAprox?: number | null; longitudeAprox?: number | null }) {
   return apiRequest<{ message: string; user: AuthUser }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -163,6 +163,10 @@ export async function getRememberedAccounts(): Promise<RememberedAccount[]> {
 export async function removeRememberedAccount(email: string) {
   const accounts = await getRememberedAccounts();
   await AsyncStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts.filter((item) => item.email !== email)));
+}
+
+export async function clearRememberedAccounts() {
+  await AsyncStorage.removeItem(ACCOUNTS_KEY);
 }
 
 export async function deleteAccount() {

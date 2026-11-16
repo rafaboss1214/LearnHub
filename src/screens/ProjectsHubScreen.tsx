@@ -14,11 +14,21 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import NearbyProjectsMap from "../components/NearbyProjectsMap";
 import { AuthUser } from "../services/auth";
 import { listProjects, Project, toggleFavorite, toggleSupport } from "../services/projects";
 import { ThemeContext } from "../theme/ThemeContext";
 
 type Filter = "todos" | "publicado" | "concluido";
+
+function distanceInKm(origin: { latitude: number; longitude: number }, destination: { latitude: number; longitude: number }) {
+  const radians = (value: number) => (value * Math.PI) / 180;
+  const earthRadius = 6371;
+  const latitudeDelta = radians(destination.latitude - origin.latitude);
+  const longitudeDelta = radians(destination.longitude - origin.longitude);
+  const a = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(radians(origin.latitude)) * Math.cos(radians(destination.latitude)) * Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function ProjectsHubScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
@@ -29,6 +39,8 @@ export default function ProjectsHubScreen({ navigation }: any) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("todos");
+  const [nearby, setNearby] = useState(false);
+  const [radius, setRadius] = useState(5);
   const [pendingId, setPendingId] = useState<number | null>(null);
 
   const load = useCallback(async (refresh = false) => {
@@ -54,13 +66,24 @@ export default function ProjectsHubScreen({ navigation }: any) {
 
   const filteredProjects = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("pt-BR");
-    return projects.filter((project) => {
+    const userLatitude = user?.endereco?.latitudeAprox;
+    const userLongitude = user?.endereco?.longitudeAprox;
+    const origin = userLatitude == null || userLongitude == null ? null : { latitude: userLatitude, longitude: userLongitude };
+    const items = projects.filter((project) => {
       const matchesFilter = filter === "todos" || project.status === filter;
-      const matchesSearch = !term || [project.titulo, project.descricao, project.categoria]
+      const matchesSearch = !term || [project.titulo, project.descricao, project.categoria, project.location?.neighborhood || "", project.location?.city || ""]
         .some((value) => value.toLocaleLowerCase("pt-BR").includes(term));
-      return matchesFilter && matchesSearch;
+      if (!matchesFilter || !matchesSearch) return false;
+      if (!nearby || !origin || project.location?.latitude == null || project.location?.longitude == null) return !nearby || !origin;
+      return distanceInKm(origin, { latitude: project.location.latitude, longitude: project.location.longitude }) <= radius;
     });
-  }, [filter, projects, search]);
+    if (!nearby || !origin) return items;
+    return [...items].sort((first, second) => {
+      const firstDistance = first.location?.latitude == null || first.location?.longitude == null ? Number.POSITIVE_INFINITY : distanceInKm(origin, { latitude: first.location.latitude, longitude: first.location.longitude });
+      const secondDistance = second.location?.latitude == null || second.location?.longitude == null ? Number.POSITIVE_INFINITY : distanceInKm(origin, { latitude: second.location.latitude, longitude: second.location.longitude });
+      return firstDistance - secondDistance;
+    });
+  }, [filter, nearby, projects, radius, search, user]);
 
   async function runProjectAction(projectId: number, action: () => Promise<unknown>) {
     setPendingId(projectId);
@@ -149,7 +172,10 @@ export default function ProjectsHubScreen({ navigation }: any) {
                   </TouchableOpacity>
                 );
               })}
+              <TouchableOpacity onPress={() => setNearby((value) => !value)} style={[styles.filter, { backgroundColor: nearby ? colors.primary : colors.card, borderColor: nearby ? colors.primary : colors.border }]}><View style={styles.nearbyLabel}><Ionicons name="map-outline" size={16} color={nearby ? "#fff" : colors.primary} /><Text style={[styles.filterText, { color: nearby ? "#fff" : colors.primary }]}>Perto de mim</Text></View></TouchableOpacity>
             </View>
+
+            {nearby && <NearbyProjectsMap projects={filteredProjects} user={user} radius={radius} onRadiusChange={setRadius} onOpenProject={(projectId) => navigation.navigate("DetalhesProjeto", { projectId })} colors={colors} />}
 
             {!!error && (
               <TouchableOpacity style={[styles.errorBox, { borderColor: colors.danger }]} onPress={() => void load()}>
@@ -196,6 +222,7 @@ export default function ProjectsHubScreen({ navigation }: any) {
 
                 <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>{item.titulo}</Text>
                 <Text style={[styles.description, { color: colors.muted }]} numberOfLines={3}>{item.descricao}</Text>
+                {!!item.location && <View style={styles.locationRow}><Ionicons name="location-outline" size={16} color={colors.primary} /><Text style={[styles.locationText, { color: colors.muted }]} numberOfLines={1}>{[item.location.street, item.location.neighborhood, item.location.city, item.location.state].filter(Boolean).join(" · ")}</Text>{user?.endereco?.latitudeAprox != null && user?.endereco?.longitudeAprox != null && item.location.latitude != null && item.location.longitude != null && <Text style={[styles.distance, { color: colors.primary }]}>{distanceInKm({ latitude: user.endereco.latitudeAprox, longitude: user.endereco.longitudeAprox }, { latitude: item.location.latitude, longitude: item.location.longitude }).toFixed(1)} km</Text>}</View>}
 
                 <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
                   <View style={styles.creatorRow}>
@@ -250,6 +277,7 @@ const styles = StyleSheet.create({
   filters: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   filter: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12 },
   filterText: { fontSize: 12, fontWeight: "700" },
+  nearbyLabel: { flexDirection: "row", alignItems: "center", gap: 6 },
   errorBox: { borderWidth: 1, borderRadius: 16, padding: 13, flexDirection: "row", gap: 9, marginBottom: 18 },
   errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
   card: { borderWidth: 1, borderRadius: 24, overflow: "hidden", marginBottom: 18, elevation: 2 },
@@ -262,6 +290,9 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontWeight: "800" },
   cardTitle: { fontSize: 20, lineHeight: 25, fontWeight: "800", marginTop: 12 },
   description: { fontSize: 14, lineHeight: 21, marginTop: 7 },
+  locationRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 },
+  locationText: { flex: 1, fontSize: 11, fontWeight: "600" },
+  distance: { fontSize: 11, fontWeight: "900" },
   cardFooter: { marginTop: 16, paddingTop: 14, borderTopWidth: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   creatorRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
   creator: { flex: 1, fontSize: 12, fontWeight: "600" },

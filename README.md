@@ -30,7 +30,7 @@
 
 O **LearnHub** é um aplicativo de colaboração educacional. Diretores publicam projetos e informam as categorias de apoio necessárias; colaboradores encontram oportunidades, enviam solicitações e acompanham toda a parceria pelo aplicativo.
 
-A solução inclui autenticação, CRUD completo de projetos, chat privado, notificações, moderação, progressão por XP e certificados. Os dados são persistidos em um MySQL hospedado por meio de uma API Express, sem expor o banco diretamente ao aplicativo.
+A solução inclui autenticação, CRUD completo de projetos, chat privado, notificações, moderação e progressão por XP. Os dados são persistidos em um MySQL hospedado por meio de uma API Express, sem expor o banco diretamente ao aplicativo.
 
 ```text
 Expo Go / aplicativo
@@ -46,13 +46,13 @@ MySQL hospedado
 - [x] CRUD completo de usuários e projetos
 - [x] Favoritos, apoios e comentários
 - [x] Solicitações de colaboração
+- [x] Mapa de projetos próximos por região aproximada
 - [x] Chat privado após aceite
 - [x] Encerramento bilateral da colaboração
-- [x] XP, níveis e certificados
+- [x] XP e níveis de participação
 - [x] Notificações e moderação
 - [x] Perfil completo, endereço privado e fotos processadas
 - [x] Recuperação de senha por código de uso único
-- [x] Certificados exportáveis em PDF
 - [x] Troca rápida entre contas usadas no aparelho
 - [x] API e MySQL hospedados
 - [x] Inicialização simplificada para computadores escolares
@@ -67,7 +67,7 @@ MySQL hospedado
 - acompanhar favoritos, apoios e comentários;
 - receber, aceitar ou recusar solicitações com justificativa;
 - conversar com o colaborador após o aceite;
-- confirmar a conclusão e emitir certificados.
+- confirmar a conclusão da colaboração.
 
 ### Para colaboradores
 
@@ -76,7 +76,7 @@ MySQL hospedado
 - enviar solicitações de colaboração por categoria;
 - acompanhar o estado de cada solicitação;
 - usar o chat privado das parcerias aceitas;
-- acumular XP, subir de nível e consultar certificados.
+- acumular XP e subir de nível conforme as colaborações concluídas.
 
 ### Para administradores
 
@@ -90,12 +90,13 @@ MySQL hospedado
 
 - Tema claro e escuro;
 - perfil editável e exclusão da própria conta;
+- busca de projetos próximos em mapa interativo, com filtros de 2, 5 ou 10 km;
+- CEP, número e complemento privados; o mapa recebe somente a posição aproximada da região;
 - foto de perfil e capa de projeto com remoção de metadados;
 - preenchimento de endereço por CEP, com edição manual disponível;
 - recuperação de senha por e-mail quando o SMTP está configurado;
-- certificado detalhado, impressão e compartilhamento em PDF;
 - senhas protegidas com hash bcrypt;
-- notificações de solicitações, mensagens e certificados;
+- notificações de solicitações e mensagens;
 - diagnóstico de API e banco pelo endpoint `/api/health`;
 - funcionamento por túnel ou rede local no Expo Go.
 
@@ -259,8 +260,11 @@ npm run dev:local
 | `npm run test:hosted` | Testa o CRUD contra a API hospedada |
 | `npm run test:hosted:community` | Testa o fluxo hospedado de colaboração |
 | `npm run admin:create` | Cria uma conta administrativa com variáveis locais |
+| `npm run demo:nearby` | Prepara contas e projetos fictícios para testar o mapa |
 
 `npm run escola`, `npm run start:tunnel` e `npm run dev:tunnel` continuam disponíveis como aliases do modo túnel.
+
+`npm run demo:nearby` prepara duas escolas, um colaborador e dois projetos fictícios no bairro Samambaia, em Praia Grande/SP. Execute somente no ambiente de demonstração desejado.
 
 ## 🔌 API
 
@@ -300,9 +304,7 @@ npm run dev:local
 | `GET/POST` | `/api/collaborations/:id/messages` | Consulta ou envia mensagens |
 | `PUT` | `/api/collaborations/:id/messages/read` | Marca mensagens como lidas |
 | `GET` | `/api/conversations` | Lista conversas disponíveis |
-| `POST` | `/api/collaborations/:id/certificate` | Emite certificado de conclusão |
-| `GET` | `/api/certificates/:code` | Consulta certificado autorizado |
-| `GET` | `/api/progress` | Retorna XP, nível e certificados |
+| `GET` | `/api/progress` | Retorna XP, nível e colaborações concluídas |
 | `GET` | `/api/notifications` | Retorna notificações e contadores |
 
 ### Administração e diagnóstico

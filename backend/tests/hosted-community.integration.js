@@ -101,12 +101,6 @@ async function run() {
     assert.equal(progress.body.progress.xp, 20);
     assert.equal(progress.body.progress.completed, 1);
 
-    const certificate = await api(`/api/collaborations/${requestId}/certificate`, { token: directorToken, method: "POST" });
-    assert.equal(certificate.status, 200);
-    assert.match(certificate.body.certificate.code, /^[a-f0-9]{40}$/);
-    const certificateView = await api(`/api/certificates/${certificate.body.certificate.code}`, { token: collaboratorToken });
-    assert.equal(certificateView.status, 200);
-
     const protectedDelete = await api(`/api/projects/${projectId}`, { token: directorToken, method: "DELETE" });
     assert.equal(protectedDelete.status, 409);
     console.log("Fluxo hospedado de colaboração validado integralmente.");

@@ -12,22 +12,10 @@ import CollaborationsScreen from "../screens/CollaborationsScreen";
 import ModerationScreen from "../screens/ModerationScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import ProgressScreen from "../screens/ProgressScreen";
+import SettingsScreen from "../screens/SettingsScreen";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const Drawer = createDrawerNavigator();
-
-function SettingsScreen() {
-  const { colors, toggleTheme } = useContext(ThemeContext);
-
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
-      <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={toggleTheme}>
-        <Text style={styles.white}>Alterar tema 🌙☀️</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 // Componente customizado para renderizar o interior do Drawer com o botão Sair
 function CustomDrawerContent(props: any) {
@@ -150,24 +138,6 @@ export default function DrawerMenu() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 25,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 30,
-  },
-  button: {
-    padding: 18,
-    borderRadius: 20,
-    alignItems: "center",
-  },
-  white: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
   logoutContainer: {
     padding: 20,
     borderTopWidth: 1,

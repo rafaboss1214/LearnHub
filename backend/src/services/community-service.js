@@ -1,4 +1,3 @@
-const crypto = require("node:crypto");
 const { pool } = require("../config/database");
 const AppError = require("../utils/app-error");
 
@@ -19,14 +18,18 @@ const REPORT_REASONS = new Set([
 const REQUEST_SELECT = `
   SELECT s.*, p.titulo AS projeto_titulo, p.status AS projeto_status,
          escola.nome AS escola_nome, colaborador.nome AS colaborador_nome,
-         e.solicitado_por, e.escola_confirmou, e.colaborador_confirmou,
-         c.codigo AS certificado_codigo
+         escola_perfil.avatar_updated_at AS escola_avatar_updated_at,
+         colaborador_perfil.avatar_updated_at AS colaborador_avatar_updated_at,
+         (escola_perfil.avatar_data IS NOT NULL) AS escola_has_avatar,
+         (colaborador_perfil.avatar_data IS NOT NULL) AS colaborador_has_avatar,
+         e.solicitado_por, e.escola_confirmou, e.colaborador_confirmou
   FROM solicitacoes_colaboracao s
   JOIN projetos p ON p.id = s.projeto_id
   JOIN usuarios escola ON escola.id = s.escola_id
   JOIN usuarios colaborador ON colaborador.id = s.colaborador_id
+  LEFT JOIN perfis_usuarios escola_perfil ON escola_perfil.usuario_id = escola.id
+  LEFT JOIN perfis_usuarios colaborador_perfil ON colaborador_perfil.usuario_id = colaborador.id
   LEFT JOIN encerramentos_colaboracao e ON e.solicitacao_id = s.id
-  LEFT JOIN certificados c ON c.solicitacao_id = s.id
 `;
 
 function parseId(value, label = "Registro") {
@@ -51,8 +54,8 @@ function serializeRequest(row) {
   return {
     id: row.id,
     project: { id: row.projeto_id, title: row.projeto_titulo, status: row.projeto_status },
-    school: { id: row.escola_id, name: row.escola_nome },
-    supporter: { id: row.colaborador_id, name: row.colaborador_nome },
+    school: { id: row.escola_id, name: row.escola_nome, avatarPath: row.escola_has_avatar ? `/api/media/users/${row.escola_id}/avatar?v=${new Date(row.escola_avatar_updated_at || 0).getTime()}` : "" },
+    supporter: { id: row.colaborador_id, name: row.colaborador_nome, avatarPath: row.colaborador_has_avatar ? `/api/media/users/${row.colaborador_id}/avatar?v=${new Date(row.colaborador_avatar_updated_at || 0).getTime()}` : "" },
     category: row.categoria,
     description: row.descricao,
     availability: row.disponibilidade || "",
@@ -67,7 +70,6 @@ function serializeRequest(row) {
       schoolConfirmed: Boolean(row.escola_confirmou),
       supporterConfirmed: Boolean(row.colaborador_confirmou),
     } : null,
-    certificateCode: row.certificado_codigo || null,
   };
 }
 
@@ -238,6 +240,9 @@ async function listConversations(auth) {
       lastMessage: messages[0]?.texto || "",
       lastMessageAt: messages[0]?.created_at || row.accepted_at,
       unread: Number(unread[0].total),
+      avatarPath: otherIsSchool
+        ? (row.escola_has_avatar ? `/api/media/users/${row.escola_id}/avatar?v=${new Date(row.escola_avatar_updated_at || 0).getTime()}` : "")
+        : (row.colaborador_has_avatar ? `/api/media/users/${row.colaborador_id}/avatar?v=${new Date(row.colaborador_avatar_updated_at || 0).getTime()}` : ""),
     });
   }
   return conversations;
@@ -251,14 +256,20 @@ async function listMessages(requestIdValue, auth) {
   if (!new Set(["aceita", "concluida"]).has(row.status)) throw new AppError(403, "O chat ainda não foi liberado.");
   const [messages] = await pool.execute(
     `SELECT m.id, m.remetente_id, m.destinatario_id, m.texto, m.created_at, m.read_at,
-            u.nome AS remetente_nome
+            u.nome AS remetente_nome, p.avatar_updated_at,
+            (p.avatar_data IS NOT NULL) AS remetente_has_avatar
      FROM mensagens_colaboracao m JOIN usuarios u ON u.id=m.remetente_id
+     LEFT JOIN perfis_usuarios p ON p.usuario_id=u.id
      WHERE m.solicitacao_id=? ORDER BY m.id`,
     [requestId],
   );
   return messages.map((message) => ({
     id: message.id,
-    sender: { id: message.remetente_id, name: message.remetente_nome },
+    sender: {
+      id: message.remetente_id,
+      name: message.remetente_nome,
+      avatarPath: message.remetente_has_avatar ? `/api/media/users/${message.remetente_id}/avatar?v=${new Date(message.avatar_updated_at || 0).getTime()}` : "",
+    },
     recipientId: message.destinatario_id,
     text: message.texto,
     createdAt: message.created_at,
@@ -295,57 +306,11 @@ async function markMessagesRead(requestIdValue, auth) {
   );
 }
 
-async function issueCertificate(requestIdValue, auth) {
-  const requestId = parseId(requestIdValue, "Solicitação");
-  const row = await requestById(requestId);
-  if (!row) throw new AppError(404, "Solicitação não encontrada.");
-  if (Number(row.escola_id) !== userId(auth)) throw new AppError(403, "Apenas a escola responsável pode emitir o certificado.");
-  if (row.status !== "concluida") throw new AppError(409, "Conclua a colaboração antes de emitir o certificado.");
-  if (row.certificado_codigo) return getCertificate(row.certificado_codigo, auth);
-  const code = crypto.randomBytes(20).toString("hex");
-  const snapshot = {
-    code,
-    collaborator: row.colaborador_nome,
-    school: row.escola_nome,
-    project: row.projeto_titulo,
-    contribution: row.descricao,
-    category: row.categoria,
-    completedAt: row.completed_at,
-    issuedAt: new Date().toISOString(),
-  };
-  await pool.execute(
-    "INSERT INTO certificados (solicitacao_id, codigo, snapshot) VALUES (?, ?, ?)",
-    [requestId, code, JSON.stringify(snapshot)],
-  );
-  return snapshot;
-}
-
-async function getCertificate(codeValue, auth) {
-  const code = String(codeValue || "").trim().toLowerCase();
-  if (!/^[a-f0-9]{40}$/.test(code)) throw new AppError(400, "Código de certificado inválido.");
-  const [rows] = await pool.execute(
-    `SELECT c.snapshot, s.escola_id, s.colaborador_id
-     FROM certificados c JOIN solicitacoes_colaboracao s ON s.id=c.solicitacao_id
-     WHERE c.codigo=? LIMIT 1`,
-    [code],
-  );
-  const row = rows[0];
-  if (!row) throw new AppError(404, "Certificado não encontrado.");
-  assertParticipant(row, auth);
-  return JSON.parse(row.snapshot);
-}
-
 async function progress(auth) {
   const id = userId(auth);
   const [rewardRows] = await pool.execute(
     "SELECT COALESCE(SUM(pontos),0) AS xp, COUNT(*) AS completed FROM recompensas_participacao WHERE usuario_id=?",
     [id],
-  );
-  const [certificates] = await pool.execute(
-    `SELECT c.codigo, c.snapshot, c.created_at
-     FROM certificados c JOIN solicitacoes_colaboracao s ON s.id=c.solicitacao_id
-     WHERE s.escola_id=? OR s.colaborador_id=? ORDER BY c.created_at DESC`,
-    [id, id],
   );
   const xp = Number(rewardRows[0].xp);
   const thresholds = [0, 50, 100, 200, 350, 500, 700];
@@ -356,22 +321,18 @@ async function progress(auth) {
     level,
     completed: Number(rewardRows[0].completed),
     nextLevelXp: nextThreshold,
-    certificates: certificates.map((row) => JSON.parse(row.snapshot)),
   };
 }
 
 async function notifications(auth) {
   const id = userId(auth);
-  const [[pending], [unread], [issued]] = await Promise.all([
+  const [[pending], [unread]] = await Promise.all([
     pool.execute("SELECT COUNT(*) AS total FROM solicitacoes_colaboracao WHERE escola_id=? AND status='pendente'", [id]),
     pool.execute("SELECT COUNT(*) AS total FROM mensagens_colaboracao WHERE destinatario_id=? AND read_at IS NULL", [id]),
-    pool.execute(`SELECT COUNT(*) AS total FROM certificados c JOIN solicitacoes_colaboracao s ON s.id=c.solicitacao_id
-                  WHERE s.colaborador_id=?`, [id]),
   ]);
   const items = [];
   if (pending[0].total) items.push({ kind: "request", count: Number(pending[0].total), title: "Solicitações pendentes", detail: "Há novas ofertas para seus projetos." });
   if (unread[0].total) items.push({ kind: "message", count: Number(unread[0].total), title: "Mensagens não lidas", detail: "Abra suas conversas para responder." });
-  if (issued[0].total) items.push({ kind: "certificate", count: Number(issued[0].total), title: "Certificados disponíveis", detail: "Consulte seus certificados na progressão." });
   if (auth?.tipo === "admin") {
     const [reports] = await pool.execute("SELECT COUNT(*) AS total FROM denuncias_projetos WHERE status IN ('pendente','em_analise')");
     if (reports[0].total) items.push({ kind: "report", count: Number(reports[0].total), title: "Projetos sinalizados", detail: "Há denúncias aguardando análise da moderação." });
@@ -450,8 +411,6 @@ module.exports = {
   listMessages,
   sendMessage,
   markMessagesRead,
-  issueCertificate,
-  getCertificate,
   progress,
   notifications,
   reportProject,

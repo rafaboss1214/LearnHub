@@ -51,8 +51,7 @@
         }
       ],
       "expo-web-browser",
-      "expo-status-bar",
-      "expo-sharing"
+      "expo-status-bar"
     ],
     "experiments": {
       "reactCompiler": true

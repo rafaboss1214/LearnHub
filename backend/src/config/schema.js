@@ -20,6 +20,8 @@ const statements = [
     bairro VARCHAR(100) NULL,
     cidade VARCHAR(100) NULL,
     estado CHAR(2) NULL,
+    latitude_aprox DECIMAL(9,6) NULL,
+    longitude_aprox DECIMAL(9,6) NULL,
     numero VARCHAR(20) NULL,
     complemento VARCHAR(120) NULL,
     habilidades VARCHAR(200) NULL,
@@ -166,17 +168,6 @@ const statements = [
     CONSTRAINT fk_recompensa_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacoes_colaboracao (id) ON DELETE CASCADE,
     CONSTRAINT fk_recompensa_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-  `CREATE TABLE IF NOT EXISTS certificados (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    solicitacao_id INT UNSIGNED NOT NULL,
-    codigo CHAR(40) NOT NULL,
-    snapshot TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_certificado_solicitacao (solicitacao_id),
-    UNIQUE KEY uk_certificado_codigo (codigo),
-    CONSTRAINT fk_certificado_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacoes_colaboracao (id) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS denuncias_projetos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     projeto_id INT UNSIGNED NOT NULL,
@@ -208,6 +199,14 @@ async function ensureDatabaseSchema() {
   const [tokenVersion] = await pool.query("SHOW COLUMNS FROM usuarios LIKE 'token_version'");
   if (!tokenVersion.length) {
     await pool.query("ALTER TABLE usuarios ADD COLUMN token_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER tipo_usuario");
+  }
+  const [approximateLatitude] = await pool.query("SHOW COLUMNS FROM perfis_usuarios LIKE 'latitude_aprox'");
+  if (!approximateLatitude.length) {
+    await pool.query("ALTER TABLE perfis_usuarios ADD COLUMN latitude_aprox DECIMAL(9,6) NULL AFTER estado");
+  }
+  const [approximateLongitude] = await pool.query("SHOW COLUMNS FROM perfis_usuarios LIKE 'longitude_aprox'");
+  if (!approximateLongitude.length) {
+    await pool.query("ALTER TABLE perfis_usuarios ADD COLUMN longitude_aprox DECIMAL(9,6) NULL AFTER latitude_aprox");
   }
   await pool.query(`INSERT IGNORE INTO perfis_usuarios (usuario_id, status_institucional)
                     SELECT id, IF(tipo_usuario='diretor','nao_verificada',NULL) FROM usuarios`);

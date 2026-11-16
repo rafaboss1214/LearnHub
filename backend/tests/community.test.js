@@ -34,7 +34,6 @@ test("serializa solicitação sem expor campos internos do banco", () => {
     solicitado_por: 4,
     escola_confirmou: 0,
     colaborador_confirmou: 1,
-    certificado_codigo: null,
   });
   assert.equal(result.project.title, "Horta escolar");
   assert.equal(result.supporter.name, "Marina");

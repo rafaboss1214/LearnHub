@@ -22,6 +22,15 @@ function optionalText(value, max) {
   return normalized;
 }
 
+function approximateCoordinate(value, min, max, label) {
+  if (value === "" || value === null || value === undefined) return null;
+  const coordinate = Number(value);
+  if (!Number.isFinite(coordinate) || coordinate < min || coordinate > max) {
+    throw new AppError(400, `${label} aproximada inválida.`);
+  }
+  return Number(coordinate.toFixed(5));
+}
+
 function normalizeAddress(payload = {}) {
   const cep = String(payload.cep || "").replace(/\D/g, "");
   const estado = String(payload.estado || "").trim().toUpperCase();
@@ -33,6 +42,8 @@ function normalizeAddress(payload = {}) {
     bairro: optionalText(payload.bairro, 100),
     cidade: optionalText(payload.cidade, 100),
     estado,
+    latitudeAprox: approximateCoordinate(payload.latitudeAprox, -90, 90, "Latitude"),
+    longitudeAprox: approximateCoordinate(payload.longitudeAprox, -180, 180, "Longitude"),
     numero: optionalText(payload.numero, 20),
     complemento: optionalText(payload.complemento, 120),
   };
@@ -62,7 +73,8 @@ function publicUser(user) {
     endereco: {
       cep: user.cep || "", rua: user.rua || "", bairro: user.bairro || "",
       cidade: user.cidade || "", estado: user.estado || "", numero: user.numero || "",
-      complemento: user.complemento || "",
+      complemento: user.complemento || "", latitudeAprox: user.latitude_aprox == null ? null : Number(user.latitude_aprox),
+      longitudeAprox: user.longitude_aprox == null ? null : Number(user.longitude_aprox),
     },
     habilidades: user.habilidades || "",
     institutionEvidence: user.evidencia_institucional || "",

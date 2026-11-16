@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS perfis_usuarios (
   bairro VARCHAR(100) NULL,
   cidade VARCHAR(100) NULL,
   estado CHAR(2) NULL,
+  latitude_aprox DECIMAL(9,6) NULL,
+  longitude_aprox DECIMAL(9,6) NULL,
   numero VARCHAR(20) NULL,
   complemento VARCHAR(120) NULL,
   habilidades VARCHAR(200) NULL,
@@ -176,18 +178,6 @@ CREATE TABLE IF NOT EXISTS recompensas_participacao (
   KEY idx_recompensas_usuario (usuario_id),
   CONSTRAINT fk_recompensa_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacoes_colaboracao (id) ON DELETE CASCADE,
   CONSTRAINT fk_recompensa_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS certificados (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  solicitacao_id INT UNSIGNED NOT NULL,
-  codigo CHAR(40) NOT NULL,
-  snapshot TEXT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uk_certificado_solicitacao (solicitacao_id),
-  UNIQUE KEY uk_certificado_codigo (codigo),
-  CONSTRAINT fk_certificado_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacoes_colaboracao (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS denuncias_projetos (

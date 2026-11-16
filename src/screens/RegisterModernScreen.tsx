@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { CommunityType, register } from "../services/auth";
+import { lookupCepLocation } from "../services/location";
 import { ThemeContext } from "../theme/ThemeContext";
 
 export default function RegisterModernScreen({ navigation }: any) {
@@ -24,6 +25,8 @@ export default function RegisterModernScreen({ navigation }: any) {
   const [estado, setEstado] = useState("");
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
+  const [latitudeAprox, setLatitudeAprox] = useState<number | null>(null);
+  const [longitudeAprox, setLongitudeAprox] = useState<number | null>(null);
   const [cepStatus, setCepStatus] = useState("");
   const [lookingUpCep, setLookingUpCep] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +39,7 @@ export default function RegisterModernScreen({ navigation }: any) {
     if (type === "colaborador" && !communityType) return showAlert("Identificação necessária", "Selecione como você participa da comunidade.");
     setSubmitting(true);
     try {
-      await register({ nome: name.trim(), email: email.trim(), senha: password, tipo: type, communityType: communityType || undefined, institutionEvidence: institutionEvidence.trim(), cep, rua, bairro, cidade, estado, numero, complemento });
+      await register({ nome: name.trim(), email: email.trim(), senha: password, tipo: type, communityType: communityType || undefined, institutionEvidence: institutionEvidence.trim(), cep, rua, bairro, cidade, estado, numero, complemento, latitudeAprox, longitudeAprox });
       showAlert("Conta criada", "Agora você já pode entrar no LearnHub.", [{ text: "Entrar", onPress: () => navigation.replace("Login") }]);
     } catch (caught) {
       showAlert("Não foi possível cadastrar", caught instanceof Error ? caught.message : "Tente novamente.");
@@ -50,12 +53,11 @@ export default function RegisterModernScreen({ navigation }: any) {
     if (!/^\d{8}$/.test(digits)) return setCepStatus("Informe um CEP com 8 dígitos.");
     setLookingUpCep(true); setCepStatus("Consultando endereço…");
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-      const data = await response.json();
-      if (!response.ok || data.erro) throw new Error();
-      setRua(data.logradouro || ""); setBairro(data.bairro || ""); setCidade(data.localidade || ""); setEstado(data.uf || "");
-      setCepStatus("Endereço encontrado. Confira e informe o número.");
-    } catch { setCepStatus("Não foi possível consultar. Preencha o endereço manualmente."); }
+      const data = await lookupCepLocation(digits);
+      setCep(data.cep); setRua(data.street); setBairro(data.neighborhood); setCidade(data.city); setEstado(data.state);
+      setLatitudeAprox(data.latitudeAprox); setLongitudeAprox(data.longitudeAprox);
+      setCepStatus(data.latitudeAprox === null ? "Endereço encontrado. A região ainda não possui coordenadas no mapa." : "Região encontrada. CEP e número permanecerão privados.");
+    } catch (caught) { setCepStatus(caught instanceof Error ? caught.message : "Não foi possível consultar. Preencha o endereço manualmente."); }
     finally { setLookingUpCep(false); }
   }
 
@@ -84,8 +86,8 @@ export default function RegisterModernScreen({ navigation }: any) {
           {type === "colaborador" ? <><Text style={[styles.label, { color: colors.text }]}>Como você participa da comunidade?</Text><View style={styles.choiceList}>{([{ key: "aluno", label: "Aluno" }, { key: "responsavel", label: "Pai, mãe ou responsável" }, { key: "comunidade", label: "Outro membro da comunidade" }] as const).map((item) => { const selected = communityType === item.key; return <TouchableOpacity key={item.key} onPress={() => setCommunityType(item.key)} style={[styles.choice, { backgroundColor: selected ? colors.primarySoft : colors.background, borderColor: selected ? colors.primary : colors.border }]}><Ionicons name={selected ? "radio-button-on" : "radio-button-off"} size={18} color={selected ? colors.primary : colors.muted} /><Text style={{ color: selected ? colors.primary : colors.text, fontWeight: "700", fontSize: 12 }}>{item.label}</Text></TouchableOpacity>; })}</View></> : <><Text style={[styles.label, { color: colors.text }]}>Identificação institucional (opcional)</Text><TextInput value={institutionEvidence} onChangeText={setInstitutionEvidence} multiline maxLength={1000} placeholder="Código INEP ou CNPJ, site e contato oficial" placeholderTextColor={colors.muted} style={[styles.textArea, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]} /><Text style={[styles.hint, { color: colors.muted }]}>A escola pode publicar imediatamente. Esses dados servem para solicitar um selo opcional.</Text></>}
 
           <Text style={[styles.section, { color: colors.text }]}>Endereço</Text>
-          <Text style={[styles.hint, { color: colors.muted }]}>{type === "colaborador" ? "O endereço é privado e não aparece para outros usuários." : "Ajuda a comunidade a identificar a localização da escola."}</Text>
-          <View style={styles.cepRow}><View style={{ flex: 1 }}><Field icon="location-outline" placeholder="CEP" value={cep} onChangeText={(value: string) => setCep(value.replace(/\D/g, "").slice(0, 8))} colors={colors} keyboardType="number-pad" /></View><TouchableOpacity disabled={lookingUpCep} onPress={() => void lookupCep()} style={[styles.cepButton, { backgroundColor: colors.primary }]}>{lookingUpCep ? <ActivityIndicator color="#fff" /> : <Ionicons name="search" size={19} color="#fff" />}</TouchableOpacity></View>
+          <Text style={[styles.hint, { color: colors.muted }]}>CEP, número e complemento são privados. Outros usuários verão somente rua, bairro, cidade e estado, com posição aproximada no mapa.</Text>
+          <View style={styles.cepRow}><View style={{ flex: 1 }}><Field icon="location-outline" placeholder="CEP" value={cep} onChangeText={(value: string) => { setCep(value.replace(/\D/g, "").slice(0, 8)); setLatitudeAprox(null); setLongitudeAprox(null); }} colors={colors} keyboardType="number-pad" /></View><TouchableOpacity disabled={lookingUpCep} onPress={() => void lookupCep()} style={[styles.cepButton, { backgroundColor: colors.primary }]}>{lookingUpCep ? <ActivityIndicator color="#fff" /> : <Ionicons name="search" size={19} color="#fff" />}</TouchableOpacity></View>
           {!!cepStatus && <Text style={[styles.cepStatus, { color: colors.muted }]}>{cepStatus}</Text>}
           <Field icon="map-outline" placeholder="Rua" value={rua} onChangeText={setRua} colors={colors} />
           <Field icon="navigate-outline" placeholder="Bairro" value={bairro} onChangeText={setBairro} colors={colors} />

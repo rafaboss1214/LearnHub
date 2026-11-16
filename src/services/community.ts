@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { apiAssetUrl, apiRequest } from "./api";
 import { getAuthToken } from "./auth";
 
 export const SUPPORT_CATEGORIES = [
@@ -13,8 +13,8 @@ export type CollaborationStatus = "pendente" | "aceita" | "recusada" | "concluid
 export type Collaboration = {
   id: number;
   project: { id: number; title: string; status: string };
-  school: { id: number; name: string };
-  supporter: { id: number; name: string };
+  school: { id: number; name: string; avatarPath?: string; avatarUrl?: string };
+  supporter: { id: number; name: string; avatarPath?: string; avatarUrl?: string };
   category: string;
   description: string;
   availability: string;
@@ -25,7 +25,6 @@ export type Collaboration = {
   acceptedAt?: string | null;
   completedAt?: string | null;
   closure: { requestedBy: number; schoolConfirmed: boolean; supporterConfirmed: boolean } | null;
-  certificateCode: string | null;
 };
 
 export type Conversation = {
@@ -34,26 +33,17 @@ export type Conversation = {
   lastMessage: string;
   lastMessageAt: string;
   unread: number;
+  avatarPath?: string;
+  avatarUrl?: string;
 };
 
 export type ChatMessage = {
   id: number;
-  sender: { id: number; name: string };
+  sender: { id: number; name: string; avatarPath?: string; avatarUrl?: string };
   recipientId: number;
   text: string;
   createdAt: string;
   read: boolean;
-};
-
-export type Certificate = {
-  code: string;
-  collaborator: string;
-  school: string;
-  project: string;
-  contribution: string;
-  category: string;
-  completedAt: string;
-  issuedAt: string;
 };
 
 export type Progress = {
@@ -61,7 +51,6 @@ export type Progress = {
   level: number;
   completed: number;
   nextLevelXp: number;
-  certificates: Certificate[];
 };
 
 async function authorized<T>(path: string, options: RequestInit = {}) {
@@ -102,24 +91,20 @@ export async function updateClosure(id: number, action: "request" | "confirm" | 
   return result.collaboration;
 }
 
-export async function issueCertificate(id: number) {
-  const result = await authorized<{ certificate: Certificate }>(`/api/collaborations/${id}/certificate`, { method: "POST" });
-  return result.certificate;
-}
-
-export async function getCertificate(code: string) {
-  const result = await authorized<{ certificate: Certificate }>(`/api/certificates/${encodeURIComponent(code)}`);
-  return result.certificate;
-}
-
 export async function listConversations() {
   const result = await authorized<{ conversations: Conversation[] }>("/api/conversations");
-  return result.conversations;
+  return result.conversations.map((conversation) => ({
+    ...conversation,
+    avatarUrl: apiAssetUrl(conversation.avatarPath || ""),
+  }));
 }
 
 export async function listMessages(id: number) {
   const result = await authorized<{ messages: ChatMessage[] }>(`/api/collaborations/${id}/messages`);
-  return result.messages;
+  return result.messages.map((message) => ({
+    ...message,
+    sender: { ...message.sender, avatarUrl: apiAssetUrl(message.sender.avatarPath || "") },
+  }));
 }
 
 export async function sendMessage(id: number, text: string) {

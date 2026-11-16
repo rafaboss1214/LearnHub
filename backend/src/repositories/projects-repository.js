@@ -14,6 +14,12 @@ const PROJECT_SELECT = `
     pm.updated_at AS cover_updated_at,
     (pm.capa_data IS NOT NULL) AS has_cover,
     u.nome AS criador_nome,
+    perfil.rua AS local_rua,
+    perfil.bairro AS local_bairro,
+    perfil.cidade AS local_cidade,
+    perfil.estado AS local_estado,
+    perfil.latitude_aprox AS local_latitude,
+    perfil.longitude_aprox AS local_longitude,
     (SELECT GROUP_CONCAT(pc.categoria ORDER BY pc.categoria SEPARATOR '||')
        FROM projeto_categorias_apoio pc WHERE pc.projeto_id = p.id) AS apoio_categorias,
     (SELECT COUNT(*) FROM projetos_favoritos pf WHERE pf.projeto_id = p.id) AS total_favoritos,
@@ -28,6 +34,7 @@ const PROJECT_SELECT = `
     ) AS apoiado
   FROM projetos p
   LEFT JOIN usuarios u ON u.id = p.criador_id
+  LEFT JOIN perfis_usuarios perfil ON perfil.usuario_id = p.criador_id
   LEFT JOIN projeto_midias pm ON pm.projeto_id = p.id
 `;
 

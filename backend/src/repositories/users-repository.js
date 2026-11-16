@@ -3,7 +3,7 @@ const { pool } = require("../config/database");
 const USER_SELECT = `
   SELECT u.id, u.nome, u.email, u.senha, u.tipo_usuario, u.token_version, u.created_at,
          p.tipo_comunidade, p.descricao, p.cep, p.rua, p.bairro, p.cidade, p.estado,
-         p.numero, p.complemento, p.habilidades, p.evidencia_institucional,
+         p.latitude_aprox, p.longitude_aprox, p.numero, p.complemento, p.habilidades, p.evidencia_institucional,
          p.status_institucional, p.motivo_institucional, p.avatar_updated_at,
          (p.avatar_data IS NOT NULL) AS has_avatar
   FROM usuarios u
@@ -30,9 +30,9 @@ async function create({ nome, email, passwordHash, tipo, profile = {} }) {
     );
     await connection.execute(
       `INSERT INTO perfis_usuarios
-        (usuario_id, tipo_comunidade, cep, rua, bairro, cidade, estado, numero, complemento,
+        (usuario_id, tipo_comunidade, cep, rua, bairro, cidade, estado, latitude_aprox, longitude_aprox, numero, complemento,
          evidencia_institucional, status_institucional)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         result.insertId,
         profile.communityType || null,
@@ -41,6 +41,8 @@ async function create({ nome, email, passwordHash, tipo, profile = {} }) {
         profile.bairro || null,
         profile.cidade || null,
         profile.estado || null,
+        profile.latitudeAprox ?? null,
+        profile.longitudeAprox ?? null,
         profile.numero || null,
         profile.complemento || null,
         profile.institutionEvidence || null,
@@ -67,6 +69,8 @@ async function update(id, fields) {
     bairro: "bairro",
     cidade: "cidade",
     estado: "estado",
+    latitudeAprox: "latitude_aprox",
+    longitudeAprox: "longitude_aprox",
     numero: "numero",
     complemento: "complemento",
     habilidades: "habilidades",
