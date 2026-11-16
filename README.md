@@ -46,12 +46,11 @@ MySQL hospedado
 - [x] CRUD completo de usuários e projetos
 - [x] Favoritos, apoios e comentários
 - [x] Solicitações de colaboração
-- [x] Mapa de projetos próximos por região aproximada
 - [x] Chat privado após aceite
 - [x] Encerramento bilateral da colaboração
-- [x] XP e níveis de participação
+- [x] XP, níveis, missões e selos de conquista
 - [x] Notificações e moderação
-- [x] Perfil completo, endereço privado e fotos processadas
+- [x] Perfil completo e fotos processadas
 - [x] Recuperação de senha por código de uso único
 - [x] Troca rápida entre contas usadas no aparelho
 - [x] API e MySQL hospedados
@@ -76,7 +75,7 @@ MySQL hospedado
 - enviar solicitações de colaboração por categoria;
 - acompanhar o estado de cada solicitação;
 - usar o chat privado das parcerias aceitas;
-- acumular XP e subir de nível conforme as colaborações concluídas.
+- acumular XP, subir de nível, cumprir missões e desbloquear selos.
 
 ### Para administradores
 
@@ -298,7 +297,7 @@ npm run dev:local
 | `GET/POST` | `/api/collaborations/:id/messages` | Consulta ou envia mensagens |
 | `PUT` | `/api/collaborations/:id/messages/read` | Marca mensagens como lidas |
 | `GET` | `/api/conversations` | Lista conversas disponíveis |
-| `GET` | `/api/progress` | Retorna XP, nível e colaborações concluídas |
+| `GET` | `/api/progress` | Retorna XP, nível, missões, sequência, estatísticas e conquistas |
 | `GET` | `/api/notifications` | Retorna notificações e contadores |
 
 ### Administração e diagnóstico

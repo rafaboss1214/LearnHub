@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS encerramentos_colaboracao (
   escola_confirmou BOOLEAN NOT NULL DEFAULT FALSE,
   colaborador_confirmou BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (solicitacao_id),
+  PRIMARY KEY (solicitacao_id, usuario_id),
   CONSTRAINT fk_encerramento_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacoes_colaboracao (id) ON DELETE CASCADE,
   CONSTRAINT fk_encerramento_usuario FOREIGN KEY (solicitado_por) REFERENCES usuarios (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

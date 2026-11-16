@@ -3,13 +3,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, type ScrollViewInstance } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthUser, getCurrentUser } from "../services/auth";
 import { ChatMessage, Conversation, listConversations, listMessages, markMessagesRead, sendMessage, updateClosure } from "../services/community";
 import { DEFAULT_PREFERENCES, getUserPreferences, UserPreferences } from "../services/preferences";
 import { ThemeContext } from "../theme/ThemeContext";
 
-export default function ChatScreen({ route }: any) {
+export default function ChatScreen({ route, navigation }: any) {
   const { colors } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -24,6 +26,10 @@ export default function ChatScreen({ route }: any) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const selectedRequestId = selected?.request.id;
   const routeRequestId = Number(route.params?.requestId || 0);
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: !selected });
+  }, [navigation, selected]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -118,7 +124,7 @@ export default function ChatScreen({ route }: any) {
     {request.closure && request.status === "aceita" && <View style={[styles.closure, { backgroundColor: "#241B3F" }]}><Text style={[styles.closureTitle, { color: conversationColors.text }]}>Encerramento solicitado</Text><Text style={[styles.closureText, { color: conversationColors.muted }]}>Confirme se a colaboração foi realizada. A confirmação dos dois participantes concede 20 XP.</Text><View style={styles.actions}>{!ownClosureConfirmation && <TouchableOpacity disabled={busy} onPress={() => void closure("confirm")} style={[styles.action, { backgroundColor: colors.success }]}><Text style={styles.white}>Confirmar conclusão</Text></TouchableOpacity>}<TouchableOpacity disabled={busy} onPress={() => void closure("decline")} style={[styles.outline, { borderColor: colors.danger }]}><Text style={{ color: colors.danger, fontWeight: "800" }}>Continuar colaboração</Text></TouchableOpacity></View></View>}
     <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.messages} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}>{!messages.length && <Text style={[styles.emptyChat, { color: conversationColors.muted }]}>Envie a primeira mensagem desta colaboração.</Text>}{messages.map((message) => { const mine = Number(message.sender.id) === currentId; return <View key={message.id} style={[styles.messageLine, mine && styles.messageLineMine]}>{!mine && <Avatar uri={message.sender.avatarUrl} name={message.sender.name} size={32} colors={{ ...colors, primarySoft: "#30264A", primary: conversationColors.accent }} />}<View style={[styles.bubble, mine ? styles.mine : styles.theirs, { backgroundColor: mine ? "#6C55D9" : conversationColors.card, borderColor: mine ? "#806DE4" : conversationColors.border }]}><Text style={{ color: conversationColors.text, lineHeight: 20 }}>{message.text}</Text>{mine && preferences.showReadReceipts && <View style={styles.receipt}><Ionicons name="checkmark-done" size={17} color={message.read ? "#70D8FF" : "#C5BEE0"} /><Text style={{ color: message.read ? "#70D8FF" : "#C5BEE0", fontSize: 9, fontWeight: "800" }}>{message.read ? "Lida" : "Enviada"}</Text></View>}</View>{mine && <Avatar uri={message.sender.avatarUrl || user?.avatarUrl} name={message.sender.name} size={32} colors={{ ...colors, primarySoft: "#30264A", primary: conversationColors.accent }} />}</View>; })}</ScrollView>
     {request.status === "aceita" && !request.closure && <TouchableOpacity disabled={busy} onPress={() => void closure("request")} style={styles.closeLink}><Text style={{ color: conversationColors.muted, fontWeight: "700" }}>Solicitar encerramento por acordo</Text></TouchableOpacity>}
-    <View style={[styles.composer, { backgroundColor: conversationColors.header, borderTopColor: conversationColors.border }]}><TextInput editable={canSend && !busy} value={draft} onChangeText={setDraft} placeholder={canSend ? "Mensagem" : "Conversa encerrada ou pausada"} placeholderTextColor={conversationColors.muted} multiline maxLength={2000} style={[styles.input, { backgroundColor: conversationColors.card, borderColor: conversationColors.border, color: conversationColors.text }]} /><TouchableOpacity disabled={!canSend || !draft.trim() || busy} onPress={() => void submit()} style={[styles.send, { backgroundColor: "#6C55D9", opacity: canSend && draft.trim() ? 1 : .4 }]}><Ionicons name="send" size={19} color="#fff" /></TouchableOpacity></View>
+    <View style={[styles.composer, { backgroundColor: conversationColors.header, borderTopColor: conversationColors.border, paddingBottom: Math.max(insets.bottom, 10) }]}><TextInput editable={canSend && !busy} value={draft} onChangeText={setDraft} placeholder={canSend ? "Mensagem" : "Conversa encerrada ou pausada"} placeholderTextColor={conversationColors.muted} multiline maxLength={2000} style={[styles.input, { backgroundColor: conversationColors.card, borderColor: conversationColors.border, color: conversationColors.text }]} /><TouchableOpacity disabled={!canSend || !draft.trim() || busy} onPress={() => void submit()} style={[styles.send, { backgroundColor: "#6C55D9", opacity: canSend && draft.trim() ? 1 : .4 }]}><Ionicons name="send" size={19} color="#fff" /></TouchableOpacity></View>
   </View>;
 }
 

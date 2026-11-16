@@ -49,8 +49,18 @@ export type ChatMessage = {
 export type Progress = {
   xp: number;
   level: number;
+  levelTitle: string;
   completed: number;
   nextLevelXp: number;
+  xpForNextLevel: number;
+  xpInLevel: number;
+  levelSpan: number;
+  progressPercent: number;
+  maxLevel: number;
+  streak: number;
+  stats: { collaborations: number; active: number; messages: number; projects: number };
+  achievements: { id: string; title: string; description: string; icon: string; color: string; current: number; target: number; progress: number; unlocked: boolean }[];
+  missions: { id: string; title: string; detail: string; icon: string; current: number; target: number; reward: string }[];
 };
 
 async function authorized<T>(path: string, options: RequestInit = {}) {

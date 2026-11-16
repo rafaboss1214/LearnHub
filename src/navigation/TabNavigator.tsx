@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,6 +54,14 @@ export default function TabNavigator() {
   const { colors } = useContext(ThemeContext);
   const insets = useSafeAreaInsets();
   const [userType, setUserType] = useState<string>("");
+  const tabBarStyle = {
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    height: 64 + Math.max(insets.bottom, 12),
+    paddingTop: 10,
+    paddingBottom: Math.max(insets.bottom, 12),
+  };
 
   useEffect(() => {
     async function obterUsuario() {
@@ -73,16 +82,8 @@ export default function TabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          // Ajusta a altura ideal dependendo se é iOS (que tem a barra de baixo) ou Android
-          height: 64 + Math.max(insets.bottom, 12),
-          // Controla o espaçamento interno para os ícones e textos não colarem embaixo
-          paddingTop: 10,
-          paddingBottom: Math.max(insets.bottom, 12),
-        },
+        tabBarStyle,
+        tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
@@ -106,11 +107,13 @@ export default function TabNavigator() {
       <Tab.Screen
         name="Projetos"
         component={ProjectsNavigator}
-        options={{
-          tabBarLabel: "Projetos",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="folder-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const focusedScreen = getFocusedRouteNameFromRoute(route) || "ListaProjetos";
+          return {
+            tabBarLabel: "Projetos",
+            tabBarStyle: focusedScreen === "ListaProjetos" ? tabBarStyle : { display: "none" },
+            tabBarIcon: ({ color, size }) => <Ionicons name="folder-outline" size={size} color={color} />,
+          };
         }}
       />
 

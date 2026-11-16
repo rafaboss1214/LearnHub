@@ -14,6 +14,16 @@ const REPORT_REASONS = new Set([
   "Informações impróprias",
   "Outro",
 ]);
+const LEVELS = Object.freeze([
+  { xp: 0, title: "Iniciante" },
+  { xp: 20, title: "Apoiador" },
+  { xp: 60, title: "Parceiro" },
+  { xp: 120, title: "Mobilizador" },
+  { xp: 200, title: "Agente de mudança" },
+  { xp: 300, title: "Mentor" },
+  { xp: 450, title: "Herói local" },
+  { xp: 650, title: "Lenda LearnHub" },
+]);
 
 const REQUEST_SELECT = `
   SELECT s.*, p.titulo AS projeto_titulo, p.status AS projeto_status,
@@ -199,8 +209,9 @@ async function updateClosure(requestIdValue, action, auth) {
         [requestId],
       );
       await connection.execute(
-        "INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos) VALUES (?, ?, 20)",
-        [requestId, row.colaborador_id],
+        `INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos)
+         VALUES (?, ?, 20), (?, ?, 20)`,
+        [requestId, row.escola_id, requestId, row.colaborador_id],
       );
     }
     await connection.commit();
@@ -306,22 +317,107 @@ async function markMessagesRead(requestIdValue, auth) {
   );
 }
 
-async function progress(auth) {
-  const id = userId(auth);
-  const [rewardRows] = await pool.execute(
-    "SELECT COALESCE(SUM(pontos),0) AS xp, COUNT(*) AS completed FROM recompensas_participacao WHERE usuario_id=?",
-    [id],
-  );
-  const xp = Number(rewardRows[0].xp);
-  const thresholds = [0, 50, 100, 200, 350, 500, 700];
-  const level = thresholds.filter((threshold) => xp >= threshold).length;
-  const nextThreshold = thresholds.find((threshold) => threshold > xp) || xp;
+function nextMilestone(value, milestones) {
+  return milestones.find((milestone) => milestone > value) || milestones[milestones.length - 1];
+}
+
+function calculateStreak(activityDates) {
+  const dates = new Set(activityDates.filter(Boolean).map(String));
+  const cursor = new Date();
+  const key = (date) => date.toISOString().slice(0, 10);
+  if (!dates.has(key(cursor))) cursor.setUTCDate(cursor.getUTCDate() - 1);
+  let streak = 0;
+  while (dates.has(key(cursor))) {
+    streak += 1;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  return streak;
+}
+
+function buildProgress({ xp, completed, collaborations, active, messages, projects, streak, userType }) {
+  const levelIndex = Math.max(0, LEVELS.findLastIndex((item) => xp >= item.xp));
+  const level = levelIndex + 1;
+  const currentLevel = LEVELS[levelIndex];
+  const nextLevel = LEVELS[levelIndex + 1] || null;
+  const nextLevelXp = nextLevel?.xp || xp;
+  const levelSpan = nextLevel ? nextLevel.xp - currentLevel.xp : 0;
+  const xpInLevel = xp - currentLevel.xp;
+  const progressPercent = nextLevel ? Math.min(100, Math.round((xpInLevel / levelSpan) * 100)) : 100;
+  const partnershipCount = active + completed;
+  const roleAchievement = userType === "diretor"
+    ? { id: "impact_creator", title: "Criador de impacto", description: "Publicou o primeiro projeto.", icon: "bulb", color: "#FFB020", current: projects, target: 1 }
+    : { id: "active_supporter", title: "Colaborador ativo", description: "Participou de três oportunidades.", icon: "hand-left", color: "#FFB020", current: collaborations, target: 3 };
+  const definitions = [
+    { id: "first_step", title: "Primeiro passo", description: "Entrou em uma colaboração.", icon: "footsteps", color: "#7C5CFC", current: collaborations, target: 1 },
+    { id: "partnership", title: "Parceria formada", description: "Teve uma proposta aceita.", icon: "people", color: "#4F8CFF", current: partnershipCount, target: 1 },
+    { id: "mission_complete", title: "Missão cumprida", description: "Concluiu uma colaboração.", icon: "checkmark-circle", color: "#22B573", current: completed, target: 1 },
+    { id: "teamwork", title: "Trabalho em equipe", description: "Concluiu três colaborações.", icon: "ribbon", color: "#A45CF6", current: completed, target: 3 },
+    { id: "community_hero", title: "Herói da comunidade", description: "Concluiu cinco colaborações.", icon: "shield-checkmark", color: "#F05D5E", current: completed, target: 5 },
+    { id: "good_conversation", title: "Boa conversa", description: "Enviou cinco mensagens.", icon: "chatbubbles", color: "#15AABF", current: messages, target: 5 },
+    { id: "communicator", title: "Comunicador", description: "Enviou 25 mensagens.", icon: "megaphone", color: "#FF7A45", current: messages, target: 25 },
+    roleAchievement,
+  ];
+  const achievements = definitions.map((item) => ({
+    ...item,
+    unlocked: item.current >= item.target,
+    progress: Math.min(item.current, item.target),
+  }));
+  const completionTarget = nextMilestone(completed, [1, 3, 5, 10, 20]);
+  const messageTarget = nextMilestone(messages, [1, 5, 15, 30, 60]);
+  const roleValue = userType === "diretor" ? projects : collaborations;
+  const roleTarget = nextMilestone(roleValue, [1, 3, 5, 10]);
   return {
     xp,
     level,
-    completed: Number(rewardRows[0].completed),
-    nextLevelXp: nextThreshold,
+    levelTitle: currentLevel.title,
+    completed,
+    nextLevelXp,
+    xpForNextLevel: nextLevel ? nextLevel.xp - xp : 0,
+    xpInLevel,
+    levelSpan,
+    progressPercent,
+    maxLevel: LEVELS.length,
+    streak,
+    stats: { collaborations, active, messages, projects },
+    achievements,
+    missions: [
+      { id: "complete", title: "Finalizar parcerias", detail: "Confirme a conclusão junto com o outro participante.", icon: "checkmark-done", current: completed, target: completionTarget, reward: "+20 XP por conclusão" },
+      { id: "messages", title: "Manter contato", detail: "Use o chat para organizar a colaboração.", icon: "chatbubble-ellipses", current: messages, target: messageTarget, reward: "Selos de comunicação" },
+      userType === "diretor"
+        ? { id: "projects", title: "Criar oportunidades", detail: "Publique projetos para mobilizar a comunidade.", icon: "bulb", current: projects, target: roleTarget, reward: "Selo de impacto" }
+        : { id: "participate", title: "Participar mais", detail: "Envie propostas para projetos que combinam com você.", icon: "hand-left", current: collaborations, target: roleTarget, reward: "Selo de participação" },
+    ],
   };
+}
+
+async function progress(auth) {
+  const id = userId(auth);
+  const [rewardResult, collaborationResult, messageResult, projectResult, activityResult] = await Promise.all([
+    pool.execute("SELECT COALESCE(SUM(pontos),0) AS xp, COUNT(*) AS completed FROM recompensas_participacao WHERE usuario_id=?", [id]),
+    pool.execute(`SELECT COUNT(*) AS total,
+                         COALESCE(SUM(status='aceita'),0) AS active,
+                         COALESCE(SUM(status='concluida'),0) AS completed
+                  FROM solicitacoes_colaboracao WHERE escola_id=? OR colaborador_id=?`, [id, id]),
+    pool.execute("SELECT COUNT(*) AS total FROM mensagens_colaboracao WHERE remetente_id=?", [id]),
+    pool.execute("SELECT COUNT(*) AS total FROM projetos WHERE criador_id=?", [id]),
+    pool.execute(`SELECT activity_date FROM (
+                    SELECT DATE_FORMAT(created_at,'%Y-%m-%d') AS activity_date FROM recompensas_participacao WHERE usuario_id=?
+                    UNION SELECT DATE_FORMAT(created_at,'%Y-%m-%d') FROM mensagens_colaboracao WHERE remetente_id=?
+                    UNION SELECT DATE_FORMAT(created_at,'%Y-%m-%d') FROM solicitacoes_colaboracao WHERE escola_id=? OR colaborador_id=?
+                  ) activities ORDER BY activity_date DESC LIMIT 60`, [id, id, id, id]),
+  ]);
+  const rewards = rewardResult[0][0];
+  const collaborations = collaborationResult[0][0];
+  return buildProgress({
+    xp: Number(rewards.xp),
+    completed: Number(rewards.completed),
+    collaborations: Number(collaborations.total),
+    active: Number(collaborations.active),
+    messages: Number(messageResult[0][0].total),
+    projects: Number(projectResult[0][0].total),
+    streak: calculateStreak(activityResult[0].map((row) => row.activity_date)),
+    userType: auth?.tipo,
+  });
 }
 
 async function notifications(auth) {
@@ -403,6 +499,8 @@ async function updateReport(reportIdValue, payload, auth) {
 module.exports = {
   SUPPORT_CATEGORIES,
   serializeRequest,
+  buildProgress,
+  calculateStreak,
   listCollaborations,
   createCollaboration,
   updateCollaboration,

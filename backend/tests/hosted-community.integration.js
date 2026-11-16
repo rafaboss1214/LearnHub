@@ -100,6 +100,10 @@ async function run() {
     const progress = await api("/api/progress", { token: collaboratorToken });
     assert.equal(progress.body.progress.xp, 20);
     assert.equal(progress.body.progress.completed, 1);
+    assert.equal(progress.body.progress.achievements.some((item) => item.unlocked), true);
+    const schoolProgress = await api("/api/progress", { token: directorToken });
+    assert.equal(schoolProgress.body.progress.xp, 20);
+    assert.equal(schoolProgress.body.progress.completed, 1);
 
     const protectedDelete = await api(`/api/projects/${projectId}`, { token: directorToken, method: "DELETE" });
     assert.equal(protectedDelete.status, 409);
