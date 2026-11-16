@@ -1,5 +1,5 @@
 const { testDatabaseConnection } = require("../config/database");
-const { isPresentationResetReady } = require("../config/presentation-reset");
+const { areDemoAccountsReady, isPresentationResetReady } = require("../config/presentation-reset");
 
 async function health(_request, response) {
   try {
@@ -9,6 +9,9 @@ async function health(_request, response) {
       api: "online",
       database: "connected",
       ...(isPresentationResetReady() ? { presentationReset: "applied" } : {}),
+      ...(isPresentationResetReady()
+        ? { presentationAccounts: areDemoAccountsReady() ? "ready" : "missing" }
+        : {}),
     });
   } catch (error) {
     return response.status(503).json({
