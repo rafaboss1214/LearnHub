@@ -1,10 +1,21 @@
 const { pool } = require("./database");
 
 const RESET_ID = "2026-11-16-presentation-clean-start";
-const DEMO_EMAILS = [
-  "diretor.apresentacao.13112026@learnhub.app",
-  "colaborador.apresentacao.13112026@learnhub.app",
+const ACCOUNT_REPAIR_ID = "2026-11-16-ensure-presentation-accounts";
+const DEMO_ACCOUNTS = [
+  {
+    name: "Escola Demo LearnHub",
+    email: "diretor.apresentacao.13112026@learnhub.app",
+    type: "diretor",
+  },
+  {
+    name: "Colaborador Demo LearnHub",
+    email: "colaborador.apresentacao.13112026@learnhub.app",
+    type: "colaborador",
+  },
 ];
+const DEMO_EMAILS = DEMO_ACCOUNTS.map((account) => account.email);
+const DEMO_PASSWORD_HASH = "$2b$12$DFFul8KzsBBF4gMK4NDDv..LljX.YuQptS/jF6VypZimosoS1JmiO";
 let presentationResetReady = false;
 let demoAccountsReady = false;
 
@@ -111,6 +122,83 @@ async function resetPresentationDataOnce(database = pool) {
   }
 }
 
+async function ensurePresentationAccountsOnce(database = pool) {
+  const connection = await database.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [marker] = await connection.execute(
+      "INSERT IGNORE INTO manutencoes_aplicadas (id) VALUES (?)",
+      [ACCOUNT_REPAIR_ID],
+    );
+
+    if (marker.affectedRows) {
+      for (const account of DEMO_ACCOUNTS) {
+        await connection.execute(
+          `INSERT INTO usuarios (nome, email, senha, tipo_usuario)
+           VALUES (?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE nome = VALUES(nome), tipo_usuario = VALUES(tipo_usuario)`,
+          [account.name, account.email, DEMO_PASSWORD_HASH, account.type],
+        );
+      }
+
+      const emailPlaceholders = DEMO_EMAILS.map(() => "?").join(", ");
+      await connection.execute(
+        `INSERT IGNORE INTO perfis_usuarios (usuario_id, tipo_comunidade, status_institucional)
+         SELECT id,
+                IF(tipo_usuario = 'colaborador', 'comunidade', NULL),
+                IF(tipo_usuario = 'diretor', 'nao_verificada', NULL)
+         FROM usuarios WHERE email IN (${emailPlaceholders})`,
+        DEMO_EMAILS,
+      );
+      await connection.execute(
+        `UPDATE perfis_usuarios perfil
+         JOIN usuarios usuario ON usuario.id = perfil.usuario_id
+         SET perfil.tipo_comunidade = IF(usuario.tipo_usuario = 'colaborador', 'comunidade', NULL),
+             perfil.descricao = NULL,
+             perfil.cep = NULL,
+             perfil.rua = NULL,
+             perfil.bairro = NULL,
+             perfil.cidade = NULL,
+             perfil.estado = NULL,
+             perfil.latitude_aprox = NULL,
+             perfil.longitude_aprox = NULL,
+             perfil.numero = NULL,
+             perfil.complemento = NULL,
+             perfil.habilidades = NULL,
+             perfil.evidencia_institucional = NULL,
+             perfil.status_institucional = IF(usuario.tipo_usuario = 'diretor', 'nao_verificada', NULL),
+             perfil.motivo_institucional = NULL,
+             perfil.avatar_mime = NULL,
+             perfil.avatar_data = NULL,
+             perfil.avatar_updated_at = NULL
+         WHERE usuario.email IN (${emailPlaceholders})`,
+        DEMO_EMAILS,
+      );
+      await connection.execute(
+        `DELETE recuperacao FROM tokens_recuperacao_senha recuperacao
+         JOIN usuarios usuario ON usuario.id = recuperacao.usuario_id
+         WHERE usuario.email IN (${emailPlaceholders})`,
+        DEMO_EMAILS,
+      );
+      await connection.execute(
+        `UPDATE usuarios SET token_version = token_version + 1
+         WHERE email IN (${emailPlaceholders})`,
+        DEMO_EMAILS,
+      );
+    }
+
+    const accountsReady = await hasDemoAccounts(connection);
+    await connection.commit();
+    demoAccountsReady = accountsReady;
+    return { applied: Boolean(marker.affectedRows), accountsReady };
+  } catch (error) {
+    await connection.rollback().catch(() => undefined);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 function isPresentationResetReady() {
   return presentationResetReady;
 }
@@ -120,10 +208,13 @@ function areDemoAccountsReady() {
 }
 
 module.exports = {
+  ACCOUNT_REPAIR_ID,
   CONTENT_TABLES,
+  DEMO_ACCOUNTS,
   DEMO_EMAILS,
   RESET_ID,
   areDemoAccountsReady,
+  ensurePresentationAccountsOnce,
   isPresentationResetReady,
   resetPresentationDataOnce,
 };

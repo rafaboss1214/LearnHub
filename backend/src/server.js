@@ -2,7 +2,10 @@ const app = require("./app");
 const env = require("./config/env");
 const { testDatabaseConnection, closeDatabasePool } = require("./config/database");
 const { ensureDatabaseSchema } = require("./config/schema");
-const { resetPresentationDataOnce } = require("./config/presentation-reset");
+const {
+  ensurePresentationAccountsOnce,
+  resetPresentationDataOnce,
+} = require("./config/presentation-reset");
 const { getPreferredLocalIPv4 } = require("./utils/network");
 
 const DATABASE_HINTS = {
@@ -56,6 +59,7 @@ async function startServer() {
   try {
     await ensureDatabaseSchema();
     await resetPresentationDataOnce();
+    await ensurePresentationAccountsOnce();
     await testDatabaseConnection();
     databaseConnected = true;
     console.log("Banco de dados conectado com sucesso.");
