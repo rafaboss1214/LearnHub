@@ -99,7 +99,6 @@ async function run() {
 
     const progress = await api("/api/progress", { token: collaboratorToken });
     const schoolProgress = await api("/api/progress", { token: directorToken });
-    console.log("Progressão após conclusão:", JSON.stringify({ colaborador: progress.body.progress, escola: schoolProgress.body.progress }));
     assert.equal(progress.body.progress.xp, 20);
     assert.equal(progress.body.progress.completed, 1);
     assert.equal(progress.body.progress.achievements.some((item) => item.unlocked), true);
