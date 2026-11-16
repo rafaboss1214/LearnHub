@@ -209,9 +209,8 @@ async function updateClosure(requestIdValue, action, auth) {
         [requestId],
       );
       await connection.execute(
-        `INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos)
-         VALUES (?, ?, 20), (?, ?, 20)`,
-        [requestId, row.escola_id, requestId, row.colaborador_id],
+        "INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos) VALUES (?, ?, 20)",
+        [requestId, row.colaborador_id],
       );
     }
     await connection.commit();
@@ -392,8 +391,7 @@ function buildProgress({ xp, completed, collaborations, active, messages, projec
 
 async function progress(auth) {
   const id = userId(auth);
-  const [rewardResult, collaborationResult, messageResult, projectResult, activityResult] = await Promise.all([
-    pool.execute("SELECT COALESCE(SUM(pontos),0) AS xp, COUNT(*) AS completed FROM recompensas_participacao WHERE usuario_id=?", [id]),
+  const [collaborationResult, messageResult, projectResult, activityResult] = await Promise.all([
     pool.execute(`SELECT COUNT(*) AS total,
                          COALESCE(SUM(status='aceita'),0) AS active,
                          COALESCE(SUM(status='concluida'),0) AS completed
@@ -401,16 +399,17 @@ async function progress(auth) {
     pool.execute("SELECT COUNT(*) AS total FROM mensagens_colaboracao WHERE remetente_id=?", [id]),
     pool.execute("SELECT COUNT(*) AS total FROM projetos WHERE criador_id=?", [id]),
     pool.execute(`SELECT activity_date FROM (
-                    SELECT DATE_FORMAT(created_at,'%Y-%m-%d') AS activity_date FROM recompensas_participacao WHERE usuario_id=?
-                    UNION SELECT DATE_FORMAT(created_at,'%Y-%m-%d') FROM mensagens_colaboracao WHERE remetente_id=?
+                    SELECT DATE_FORMAT(created_at,'%Y-%m-%d') AS activity_date FROM mensagens_colaboracao WHERE remetente_id=?
                     UNION SELECT DATE_FORMAT(created_at,'%Y-%m-%d') FROM solicitacoes_colaboracao WHERE escola_id=? OR colaborador_id=?
-                  ) activities ORDER BY activity_date DESC LIMIT 60`, [id, id, id, id]),
+                    UNION SELECT DATE_FORMAT(completed_at,'%Y-%m-%d') FROM solicitacoes_colaboracao
+                          WHERE (escola_id=? OR colaborador_id=?) AND completed_at IS NOT NULL
+                  ) activities ORDER BY activity_date DESC LIMIT 60`, [id, id, id, id, id]),
   ]);
-  const rewards = rewardResult[0][0];
   const collaborations = collaborationResult[0][0];
+  const completed = Number(collaborations.completed);
   return buildProgress({
-    xp: Number(rewards.xp),
-    completed: Number(rewards.completed),
+    xp: completed * 20,
+    completed,
     collaborations: Number(collaborations.total),
     active: Number(collaborations.active),
     messages: Number(messageResult[0][0].total),

@@ -208,16 +208,6 @@ async function ensureDatabaseSchema() {
   if (!approximateLongitude.length) {
     await pool.query("ALTER TABLE perfis_usuarios ADD COLUMN longitude_aprox DECIMAL(9,6) NULL AFTER latitude_aprox");
   }
-  const [rewardPrimaryKey] = await pool.query("SHOW INDEX FROM recompensas_participacao WHERE Key_name='PRIMARY' ORDER BY Seq_in_index");
-  if (rewardPrimaryKey.length === 1 && rewardPrimaryKey[0].Column_name === "solicitacao_id") {
-    await pool.query("ALTER TABLE recompensas_participacao DROP PRIMARY KEY, ADD PRIMARY KEY (solicitacao_id, usuario_id)");
-  }
-  await pool.query(`INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos, created_at)
-                    SELECT id, escola_id, 20, COALESCE(completed_at, updated_at)
-                    FROM solicitacoes_colaboracao WHERE status='concluida'`);
-  await pool.query(`INSERT IGNORE INTO recompensas_participacao (solicitacao_id, usuario_id, pontos, created_at)
-                    SELECT id, colaborador_id, 20, COALESCE(completed_at, updated_at)
-                    FROM solicitacoes_colaboracao WHERE status='concluida'`);
   await pool.query(`INSERT IGNORE INTO perfis_usuarios (usuario_id, status_institucional)
                     SELECT id, IF(tipo_usuario='diretor','nao_verificada',NULL) FROM usuarios`);
 }
